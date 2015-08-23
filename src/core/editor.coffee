@@ -18,7 +18,7 @@ class Editor
     @delta = @doc.toDelta()
     @length = @delta.length()
     @selection = new Selection(@doc, @quill)
-    @startPolling()
+    @timer = setInterval(_.bind(this.checkUpdate, this), @options.pollInterval)
     @savedRange = null;
     @quill.on("selection-change", (range) =>
       @savedRange = range
@@ -26,16 +26,10 @@ class Editor
     this.enable() unless @options.readOnly
 
   destroy: ->
-    @stopPolling()
+    clearInterval(@timer)
 
   disable: ->
     this.enable(false)
-
-  startPolling: ->
-    @timer = setInterval(_.bind(this.checkUpdate, this), @options.pollInterval)
-
-  stopPolling: ->
-    clearInterval(@timer)
 
   enable: (enabled = true) ->
     @root.setAttribute('contenteditable', enabled)
@@ -73,7 +67,7 @@ class Editor
       @quill.emit(@quill.constructor.events.TEXT_CHANGE, localDelta, Editor.sources.USER)
 
   checkUpdate: (source = 'user') ->
-    return @stopPolling() unless @root.parentNode?
+    return clearInterval(@timer) unless @root.parentNode?
     delta = this._update()
     if delta
       @delta = @delta.compose(delta)
