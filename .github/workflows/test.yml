@@ -100,7 +100,8 @@ jobs:
     needs:
       - unit
       - e2e
-    timeout-minutes: 30
+    if: ${{ github.ref == 'refs/heads/main' }}
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -122,5 +123,4 @@ jobs:
       - name: Post-install
         run: npm rebuild && npm run prepare --if-present
       - name: Tag
-        if: ${{ github.ref == 'refs/heads/main' }}
         run: ./tag.sh
