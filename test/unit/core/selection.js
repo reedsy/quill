@@ -1,6 +1,8 @@
 import Selection, { Range } from '../../../core/selection';
 import Cursor from '../../../blots/cursor';
 import Emitter from '../../../core/emitter';
+import Quill from '../../../core/quill';
+import Inline from '../../../blots/inline';
 
 describe('Selection', function() {
   beforeEach(function() {
@@ -655,6 +657,44 @@ describe('Selection', function() {
       expect(() => {
         this.bounds = selection.getBounds(0, 10);
       }).not.toThrow();
+    });
+  });
+
+  describe('context.range update', function() {
+    it('updates the selection from the optimize context', function(done) {
+      class TestSelectorOffset1 extends Inline {
+        static tagName = 'SPAN';
+        static blotName = 'test-selector-offset-1';
+        static className = 'ql-test-selector-offset-1';
+
+        static formats() {
+          return true;
+        }
+
+        optimize(context) {
+          context.range = {
+            startNode: this.domNode.childNodes[0],
+            startOffset: 1,
+          };
+        }
+      }
+
+      Quill.register(TestSelectorOffset1);
+
+      const quill = this.initialize(
+        Quill,
+        '<p><span class="ql-test-selector-offset-1">abce</span></p>',
+      );
+
+      quill.setSelection(3);
+      document.execCommand('insertText', false, 'd');
+
+      setTimeout(() => {
+        const range = quill.getSelection();
+        expect(range.index).toBe(1);
+        expect(range.length).toBe(0);
+        done();
+      });
     });
   });
 });
