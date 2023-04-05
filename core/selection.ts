@@ -88,11 +88,16 @@ class Selection extends Module {
       });
     });
     this.emitter.on(Emitter.events.SCROLL_OPTIMIZE, (mutations, context) => {
-      if (context.range) {
+      if (!context.range) return;
+      // Perform this in a setTimeout() to let the browser finish reacting to
+      // user input before attempting to set the selection. This also has the
+      // side-effect of waiting until after the SCROLL_UPDATE listener above,
+      // which tries to reset the user selection to what it was before the update.
+      setTimeout(() => {
         const { startNode, startOffset, endNode, endOffset } = context.range;
         this.setNativeRange(startNode, startOffset, endNode, endOffset);
         this.update(Emitter.sources.SILENT);
-      }
+      });
     });
     this.update(Emitter.sources.SILENT);
   }
