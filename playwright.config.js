@@ -21,7 +21,7 @@ const config = {
         { name: 'Chrome', use: Object.assign({}, test_1.devices['Desktop Chrome']) },
         { name: 'Firefox', use: Object.assign({}, test_1.devices['Desktop Firefox']) },
         { name: 'Safari', use: Object.assign({}, test_1.devices['Desktop Safari']) },
-        { name: 'Edge', use: { channel: 'msedge' } },
+        { name: 'Edge', use: Object.assign({}, test_1.devices['Desktop Edge']) },
     ],
 };
 exports.default = config;
