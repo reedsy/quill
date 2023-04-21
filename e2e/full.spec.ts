@@ -4,6 +4,15 @@ import { CHAPTER, P1, P2 } from './utils/fixtures';
 import QuillPage from './utils/QuillPage';
 
 test('compose an epic', async ({ page }) => {
+  const type = page.type.bind(page);
+  page.type = async (selector, text, options) => {
+    options = {
+      delay: 1,
+      ...options,
+    };
+    return type(selector, text, options);
+  };
+
   await page.goto('http://localhost:9000/standalone/full');
   const quillPage = new QuillPage(page);
   await page.waitForSelector('.ql-editor', { timeout: 10000 });

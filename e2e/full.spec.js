@@ -17,6 +17,11 @@ const utils_1 = require("./utils");
 const fixtures_1 = require("./utils/fixtures");
 const QuillPage_1 = __importDefault(require("./utils/QuillPage"));
 (0, test_1.test)('compose an epic', ({ page }) => __awaiter(void 0, void 0, void 0, function* () {
+    const type = page.type.bind(page);
+    page.type = (selector, text, options) => __awaiter(void 0, void 0, void 0, function* () {
+        options = Object.assign({ delay: 1 }, options);
+        return type(selector, text, options);
+    });
     yield page.goto('http://localhost:9000/standalone/full');
     const quillPage = new QuillPage_1.default(page);
     yield page.waitForSelector('.ql-editor', { timeout: 10000 });
