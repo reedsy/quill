@@ -167,7 +167,7 @@ class Keyboard extends Module<KeyboardOptions> {
 
   listen() {
     this.quill.root.addEventListener('keydown', evt => {
-      if (evt.defaultPrevented || evt.isComposing) return;
+      if (!this.shouldHandleKeydown(evt)) return;
       const bindings = (this.bindings[evt.key] || []).concat(
         this.bindings[evt.which] || [],
       );
@@ -328,6 +328,10 @@ class Keyboard extends Module<KeyboardOptions> {
     this.quill.updateContents(delta, Quill.sources.USER);
     this.quill.setSelection(range.index + 1, Quill.sources.SILENT);
     this.quill.focus();
+  }
+
+  protected shouldHandleKeydown(event: KeyboardEvent): boolean {
+    return !event.defaultPrevented && !event.isComposing;
   }
 }
 
