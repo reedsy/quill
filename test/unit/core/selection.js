@@ -595,6 +595,22 @@ describe('Selection', function() {
       );
     });
 
+    it('selection starting at end of text node', function() {
+      this.div.style.width = `${this.reference.width * 4}px`;
+      const selection = this.initialize(
+        Selection,
+        `
+        <p>
+          0000
+          <b>0000</b>
+          0000
+        </p>`,
+        this.div,
+      );
+      this.bounds = selection.getBounds(4, 1);
+      expect(this.bounds.width).toBeApproximately(this.reference.width, 1);
+    });
+
     it('multiple lines', function() {
       const selection = this.initialize(
         Selection,
