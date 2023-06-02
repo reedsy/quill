@@ -432,8 +432,8 @@ class Quill {
     return this.editor.getContents(index, length);
   }
 
-  getFormat(index: number, length?: number);
-  getFormat(range: { index: number; length: number });
+  getFormat(index?: number, length?: number);
+  getFormat(range?: { index: number; length: number });
   getFormat(
     index: { index: number; length: number } | number = this.getSelection(true),
     length = 0,
@@ -498,8 +498,8 @@ class Quill {
     return this.editor.getHTML(index, length);
   }
 
-  getText(range: { index: number; length: number }): string;
-  getText(index: number, length?: number): string;
+  getText(range?: { index: number; length: number }): string;
+  getText(index?: number, length?: number): string;
   getText(
     index: { index: number; length: number } | number = 0,
     length?: number,

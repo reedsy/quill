@@ -1,7 +1,7 @@
 import rfdc from 'rfdc';
 import isEqual from 'fast-deep-equal';
 import merge from 'lodash.merge';
-import { LeafBlot, Scope } from 'parchment';
+import { LeafBlot, EmbedBlot, Scope } from 'parchment';
 import Delta, { AttributeMap, Op } from '@reedsy/quill-delta';
 import Block, { BlockEmbed, bubbleFormats } from '../blots/block';
 import Break from '../blots/break';
@@ -32,17 +32,17 @@ class Editor {
     normalizedOps.reduce((index, op) => {
       const length = Op.length(op);
       let attributes = op.attributes || {};
-      let addedNewline = false;
+      let isImplicitNewlinePrepended = false;
+      let isImplicitNewlineAppended = false;
       if (op.insert != null) {
         deleteDelta.retain(length);
         if (typeof op.insert === 'string') {
           const text = op.insert;
-          // @ts-expect-error TODO: Fix this the next time the file is edited.
-          addedNewline =
+          isImplicitNewlineAppended =
             !text.endsWith('\n') &&
             (scrollLength <= index ||
               // @ts-expect-error
-              this.scroll.descendant(BlockEmbed, index)[0]);
+              !!this.scroll.descendant(BlockEmbed, index)[0]);
           this.scroll.insertAt(index, text);
           const [line, offset] = this.scroll.line(index);
           let formats = merge({}, bubbleFormats(line));
@@ -55,12 +55,33 @@ class Editor {
         } else if (typeof op.insert === 'object') {
           const key = Object.keys(op.insert)[0]; // There should only be one key
           if (key == null) return index;
-          // @ts-expect-error TODO: Fix this the next time the file is edited.
-          addedNewline =
-            this.scroll.query(key, Scope.INLINE) != null &&
-            (scrollLength <= index ||
+          const isInlineEmbed = this.scroll.query(key, Scope.INLINE) != null;
+          if (isInlineEmbed) {
+            if (
+              scrollLength <= index ||
               // @ts-expect-error
-              this.scroll.descendant(BlockEmbed, index)[0]);
+              !!this.scroll.descendant(BlockEmbed, index)[0]
+            ) {
+              isImplicitNewlineAppended = true;
+            }
+            const [leaf] = this.scroll.leaf(index);
+            const formats = merge({}, bubbleFormats(leaf));
+            attributes = AttributeMap.diff(formats, attributes) || {};
+          } else if (index > 0) {
+            // @ts-expect-error
+            const [leaf, offset] = this.scroll.descendant(LeafBlot, index - 1);
+            if (leaf instanceof TextBlot) {
+              const text = leaf.value();
+              if (text[offset] !== '\n') {
+                isImplicitNewlinePrepended = true;
+              }
+            } else if (
+              leaf instanceof EmbedBlot &&
+              leaf.statics.scope === Scope.INLINE_BLOT
+            ) {
+              isImplicitNewlinePrepended = true;
+            }
+          }
           this.scroll.insertAt(index, key, op.insert[key]);
         }
         scrollLength += length;
@@ -76,10 +97,12 @@ class Editor {
       Object.keys(attributes).forEach(name => {
         this.scroll.formatAt(index, length, name, attributes[name]);
       });
-      const addedLength = addedNewline ? 1 : 0;
-      scrollLength += addedLength;
+      const prependedLength = isImplicitNewlinePrepended ? 1 : 0;
+      const addedLength = isImplicitNewlineAppended ? 1 : 0;
+      scrollLength += prependedLength + addedLength;
+      deleteDelta.retain(prependedLength);
       deleteDelta.delete(addedLength);
-      return index + length + addedLength;
+      return index + length + prependedLength + addedLength;
     }, 0);
     deleteDelta.reduce((index, op) => {
       if (typeof op.delete === 'number') {
