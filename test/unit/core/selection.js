@@ -608,7 +608,10 @@ describe('Selection', function () {
         this.div,
       );
       this.bounds = selection.getBounds(4, 1);
-      expect(this.bounds.width).toBeApproximately(this.reference.width, 1);
+      expect(this.bounds.width).toBeApproximately(
+        this.reference.width,
+        2, // Everything except Safari is happy with 1
+      );
     });
 
     it('multiple lines', function () {

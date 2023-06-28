@@ -387,6 +387,19 @@ describe('Editor', function () {
       );
     });
 
+    it('insert formatted lines before block embed', function () {
+      const editor = this.initialize(
+        Editor,
+        '<p>0123</p><iframe src="#" class="ql-video" frameborder="0" allowfullscreen="true"></iframe>',
+      );
+      editor.applyDelta(
+        new Delta().retain(5).insert('a\nb').insert('\n', { header: 1 }),
+      );
+      expect(this.container).toEqualHTML(
+        '<p>0123</p><p>a</p><h1>b</h1><iframe src="#" class="ql-video" frameborder="0" allowfullscreen="true"></iframe>',
+      );
+    });
+
     it('insert attributed text with newline before block embed', function () {
       const editor = this.initialize(
         Editor,
@@ -524,6 +537,22 @@ describe('Editor', function () {
       );
       expect(this.container).toEqualHTML(
         '<p><strong>01</strong><img src="/assets/favicon.png"><strong>23</strong></p>',
+      );
+    });
+
+    it('insert inline embed between plain text and formatted content', function () {
+      const editor = this.initialize(Editor, '<p>a<strong>b</strong></p>');
+      editor.applyDelta(new Delta().retain(1).insert({ image: '#' }));
+      expect(this.container).toEqualHTML(
+        '<p>a<img src="#"><strong>b</strong></p>',
+      );
+    });
+
+    it('prepend inline embed to another inline embed with same attributes', function () {
+      const editor = this.initialize(Editor, '<p><img src="#" alt="hi"/></p>');
+      editor.applyDelta(new Delta().insert({ image: '#' }, { alt: 'hi' }));
+      expect(this.container).toEqualHTML(
+        '<p><img src="#" alt="hi"><img src="#" alt="hi"></p>',
       );
     });
 
