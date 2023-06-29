@@ -174,8 +174,8 @@ class Quill {
       emitter: this.emitter,
     });
     this.editor = new Editor(this.scroll);
-    this.composition = new Composition(this.scroll, this.emitter);
     this.theme = new this.options.theme(this, this.options); // eslint-disable-line new-cap
+    this.composition = this.theme.addModule('composition');
     this.selection = this.theme.addModule('selection');
     this.keyboard = this.theme.addModule('keyboard');
     this.clipboard = this.theme.addModule('clipboard');

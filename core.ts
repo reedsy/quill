@@ -16,6 +16,7 @@ import Selection from './core/selection';
 import Uploader from './modules/uploader';
 import Delta, { Op, OpIterator, AttributeMap } from '@reedsy/quill-delta';
 import Input from './modules/input';
+import Composition from './core/composition';
 
 export { Delta, Op, OpIterator, AttributeMap };
 
@@ -31,6 +32,7 @@ Quill.register({
   'blots/text': TextBlot,
 
   'modules/clipboard': Clipboard,
+  'modules/composition': Composition,
   'modules/history': History,
   'modules/keyboard': Keyboard,
   'modules/selection': Selection,
