@@ -12,6 +12,7 @@ import History from '../modules/history';
 import Keyboard from '../modules/keyboard';
 import Uploader from '../modules/uploader';
 import Selection from '../core/selection';
+import Composition from '../core/composition';
 
 const ALIGNS = [false, 'center', 'right', 'justify'];
 
@@ -93,6 +94,7 @@ class BaseTheme extends Theme {
   }
 
   addModule(name: 'clipboard'): Clipboard;
+  addModule(name: 'composition'): Composition;
   addModule(name: 'keyboard'): Keyboard;
   addModule(name: 'uploader'): Uploader;
   addModule(name: 'history'): History;
