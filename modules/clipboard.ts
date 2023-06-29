@@ -71,6 +71,8 @@ interface ClipboardOptions {
 }
 
 class Clipboard extends Module<ClipboardOptions> {
+  static DEFAULTS: ClipboardOptions;
+
   matchers: [Selector, Matcher][];
 
   constructor(quill: Quill, options: Partial<ClipboardOptions>) {
@@ -79,6 +81,7 @@ class Clipboard extends Module<ClipboardOptions> {
     this.quill.root.addEventListener('cut', e => this.onCaptureCopy(e, true));
     this.quill.root.addEventListener('paste', this.onCapturePaste.bind(this));
     this.matchers = [];
+    // @ts-expect-error Fix me later
     CLIPBOARD_CONFIG.concat(this.options.matchers).forEach(
       ([selector, matcher]) => {
         this.addMatcher(selector, matcher);
@@ -95,7 +98,7 @@ class Clipboard extends Module<ClipboardOptions> {
     formats: Record<string, unknown> = {},
   ) {
     if (formats[CodeBlock.blotName]) {
-      return new Delta().insert(text, {
+      return new Delta().insert(text || '', {
         [CodeBlock.blotName]: formats[CodeBlock.blotName],
       });
     }
@@ -141,7 +144,7 @@ class Clipboard extends Module<ClipboardOptions> {
   ): void;
   dangerouslyPasteHTML(
     index: number | string,
-    html: string,
+    html?: string,
     source: EmitterSource = Quill.sources.API,
   ) {
     if (typeof index === 'string') {
@@ -165,8 +168,8 @@ class Clipboard extends Module<ClipboardOptions> {
     const [range] = this.quill.selection.getRange();
     if (range == null) return;
     const { html, text } = this.onCopy(range, isCut);
-    e.clipboardData.setData('text/plain', text);
-    e.clipboardData.setData('text/html', html);
+    e.clipboardData?.setData('text/plain', text);
+    e.clipboardData?.setData('text/html', html);
     if (isCut) {
       deleteRange({ range, quill: this.quill });
     }
@@ -177,9 +180,9 @@ class Clipboard extends Module<ClipboardOptions> {
     e.preventDefault();
     const range = this.quill.getSelection(true);
     if (range == null) return;
-    const html = e.clipboardData.getData('text/html');
-    const text = e.clipboardData.getData('text/plain');
-    const files = Array.from(e.clipboardData.files || []);
+    const html = e.clipboardData?.getData('text/html');
+    const text = e.clipboardData?.getData('text/plain');
+    const files = Array.from(e.clipboardData?.files || []);
     if (!html && files.length > 0) {
       this.quill.uploader.upload(range, files);
       return;
@@ -188,7 +191,7 @@ class Clipboard extends Module<ClipboardOptions> {
       const doc = new DOMParser().parseFromString(html, 'text/html');
       if (
         doc.body.childElementCount === 1 &&
-        doc.body.firstElementChild.tagName === 'IMG'
+        doc.body.firstElementChild?.tagName === 'IMG'
       ) {
         this.quill.uploader.upload(range, files);
         return;
@@ -204,7 +207,7 @@ class Clipboard extends Module<ClipboardOptions> {
     return { html, text };
   }
 
-  onPaste(range: Range, { text, html }: { text: string; html: string }) {
+  onPaste(range: Range, { text, html }: { text?: string; html?: string }) {
     const formats = this.quill.getFormat(range.index);
     const pastedDelta = this.convert({ text, html }, formats);
     debug.log('onPaste', pastedDelta, { text, html });
@@ -222,8 +225,8 @@ class Clipboard extends Module<ClipboardOptions> {
   }
 
   prepareMatching(container: Element, nodeMatches: WeakMap<Node, Matcher[]>) {
-    const elementMatchers = [];
-    const textMatchers = [];
+    const elementMatchers: Matcher[] = [];
+    const textMatchers: Matcher[] = [];
     this.matchers.forEach(pair => {
       const [selector, matcher] = pair;
       switch (selector) {
@@ -234,11 +237,10 @@ class Clipboard extends Module<ClipboardOptions> {
           elementMatchers.push(matcher);
           break;
         default:
-          // @ts-expect-error
           Array.from(container.querySelectorAll(selector)).forEach(node => {
             if (nodeMatches.has(node)) {
               const matches = nodeMatches.get(node);
-              matches.push(matcher);
+              matches?.push(matcher);
             } else {
               nodeMatches.set(node, [matcher]);
             }
@@ -270,6 +272,7 @@ function applyFormat(
       return newDelta.push(op);
     }
     const formats = value ? { [format]: value } : {};
+    // @ts-expect-error Fix me later
     return newDelta.insert(op.insert, { ...formats, ...op.attributes });
   }, new Delta());
 }
@@ -340,7 +343,7 @@ function isBetweenInlineElements(node, scroll) {
 }
 
 const preNodes = new WeakMap();
-function isPre(node: Node) {
+function isPre(node: Node | null) {
   if (node == null) return false;
   if (!preNodes.has(node)) {
     // @ts-expect-error
@@ -495,6 +498,7 @@ function matchIndent(node: Node, delta: Delta, scroll: ScrollBlot) {
     if (op.attributes && typeof op.attributes.indent === 'number') {
       return composed.push(op);
     }
+    // @ts-expect-error Fix me later
     return composed.insert(op.insert, { indent, ...(op.attributes || {}) });
   }, new Delta());
 }
@@ -512,7 +516,7 @@ function matchNewline(node: Node, delta: Delta, scroll: ScrollBlot) {
       return delta.insert('\n');
     }
     if (delta.length() > 0 && node.nextSibling) {
-      let { nextSibling } = node;
+      let nextSibling: Node | null = node.nextSibling;
       while (nextSibling != null) {
         // @ts-expect-error
         if (isLine(nextSibling, scroll)) {
@@ -543,7 +547,8 @@ function matchStyles(node: HTMLElement, delta: Delta) {
     formats.strike = true;
   }
   if (
-    style.fontWeight.startsWith('bold') ||
+    style.fontWeight?.startsWith('bold') ||
+    // @ts-expect-error Fix me later
     parseInt(style.fontWeight, 10) >= 700
   ) {
     formats.bold = true;

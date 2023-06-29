@@ -15,6 +15,7 @@ import Keyboard from './modules/keyboard';
 import Selection from './core/selection';
 import Uploader from './modules/uploader';
 import Delta, { Op, OpIterator, AttributeMap } from '@reedsy/quill-delta';
+import Input from './modules/input';
 
 export { Delta, Op, OpIterator, AttributeMap };
 
@@ -34,6 +35,7 @@ Quill.register({
   'modules/keyboard': Keyboard,
   'modules/selection': Selection,
   'modules/uploader': Uploader,
+  'modules/input': Input,
 });
 
 export default Quill;

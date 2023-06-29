@@ -13,6 +13,11 @@ import { Range } from './selection';
 const cloneDeep = rfdc();
 const ASCII = /^[ -~]*$/;
 
+type SelectionInfo = {
+  newRange: Range;
+  oldRange: Range;
+};
+
 class Editor {
   scroll: Scroll;
   delta: Delta;
@@ -41,13 +46,11 @@ class Editor {
           isImplicitNewlineAppended =
             !text.endsWith('\n') &&
             (scrollLength <= index ||
-              // @ts-expect-error
               !!this.scroll.descendant(BlockEmbed, index)[0]);
           this.scroll.insertAt(index, text);
           const [line, offset] = this.scroll.line(index);
           let formats = merge({}, bubbleFormats(line));
           if (line instanceof Block) {
-            // @ts-expect-error
             const [leaf] = line.descendant(LeafBlot, offset);
             formats = merge(formats, bubbleFormats(leaf));
           }
@@ -59,16 +62,11 @@ class Editor {
           if (isInlineEmbed) {
             if (
               scrollLength <= index ||
-              // @ts-expect-error
               !!this.scroll.descendant(BlockEmbed, index)[0]
             ) {
               isImplicitNewlineAppended = true;
             }
-            const [leaf] = this.scroll.leaf(index);
-            const formats = merge({}, bubbleFormats(leaf));
-            attributes = AttributeMap.diff(formats, attributes) || {};
           } else if (index > 0) {
-            // @ts-expect-error
             const [leaf, offset] = this.scroll.descendant(LeafBlot, index - 1);
             if (leaf instanceof TextBlot) {
               const text = leaf.value();
@@ -83,6 +81,12 @@ class Editor {
             }
           }
           this.scroll.insertAt(index, key, op.insert[key]);
+
+          if (isInlineEmbed) {
+            const [leaf] = this.scroll.descendant(LeafBlot, index);
+            const formats = merge({}, bubbleFormats(leaf));
+            attributes = AttributeMap.diff(formats, attributes) || {};
+          }
         }
         scrollLength += length;
       } else {
@@ -160,8 +164,8 @@ class Editor {
   }
 
   getFormat(index: number, length = 0): Record<string, unknown> {
-    let lines = [];
-    let leaves = [];
+    let lines: (Block | BlockEmbed)[] = [];
+    let leaves: LeafBlot[] = [];
     if (length === 0) {
       this.scroll.path(index).forEach(path => {
         const [blot] = path;
@@ -173,7 +177,6 @@ class Editor {
       });
     } else {
       lines = this.scroll.lines(index, length);
-      // @ts-expect-error
       leaves = this.scroll.descendants(LeafBlot, index, length);
     }
     const [lineFormats, leafFormats] = [lines, leaves].map(blots => {
@@ -191,10 +194,13 @@ class Editor {
 
   getHTML(index: number, length: number): string {
     const [line, lineOffset] = this.scroll.line(index);
-    if (line.length() >= lineOffset + length) {
-      return convertHTML(line, lineOffset, length, true);
+    if (line) {
+      if (line.length() >= lineOffset + length) {
+        return convertHTML(line, lineOffset, length, true);
+      }
+      return convertHTML(this.scroll, index, length, true);
     }
-    return convertHTML(this.scroll, index, length, true);
+    return '';
   }
 
   getText(index: number, length: number): string {
@@ -228,7 +234,7 @@ class Editor {
     if (this.scroll.children.length === 0) return true;
     if (this.scroll.children.length > 1) return false;
     const blot = this.scroll.children.head;
-    if (blot.statics.blotName !== Block.blotName) return false;
+    if (blot?.statics.blotName !== Block.blotName) return false;
     const block = blot as Block;
     if (block.children.length > 1) return false;
     return block.children.head instanceof Break;
@@ -252,18 +258,25 @@ class Editor {
     return this.applyDelta(delta);
   }
 
-  update(change: Delta, mutations = [], selectionInfo = undefined): Delta {
+  update(
+    change: Delta | null,
+    mutations: MutationRecord[] = [],
+    selectionInfo: SelectionInfo | undefined = undefined,
+  ): Delta {
     const oldDelta = this.delta;
     if (
       mutations.length === 1 &&
       mutations[0].type === 'characterData' &&
+      // @ts-expect-error Fix me later
       mutations[0].target.data.match(ASCII) &&
       this.scroll.find(mutations[0].target)
     ) {
       // Optimization for character changes
       const textBlot = this.scroll.find(mutations[0].target);
       const formats = bubbleFormats(textBlot);
+      // @ts-expect-error Fix me later
       const index = textBlot.offset(this.scroll);
+      // @ts-expect-error Fix me later
       const oldValue = mutations[0].oldValue.replace(CursorBlot.CONTENTS, '');
       const oldText = new Delta().insert(oldValue);
       // @ts-expect-error
@@ -335,7 +348,7 @@ function convertHTML(blot, index, length, isRoot = false) {
   if (blot.children) {
     // TODO fix API
     if (blot.statics.blotName === 'list-container') {
-      const items = [];
+      const items: any[] = [];
       blot.children.forEachAt(index, length, (child, offset, childLength) => {
         const formats = child.formats();
         items.push({
@@ -348,7 +361,7 @@ function convertHTML(blot, index, length, isRoot = false) {
       });
       return convertListHTML(items, -1, []);
     }
-    const parts = [];
+    const parts: string[] = [];
     blot.children.forEachAt(index, length, (child, offset, childLength) => {
       parts.push(convertHTML(child, offset, childLength));
     });
@@ -407,22 +420,18 @@ function normalizeDelta(delta: Delta) {
   }, new Delta());
 }
 
-function shiftRange(
-  { index, length }: { index: number; length: number },
-  amount: number,
-) {
+function shiftRange({ index, length }: Range, amount: number) {
   return new Range(index + amount, length);
 }
 
-function splitOpLines(ops) {
-  const split = [];
+function splitOpLines(ops: Op[]) {
+  const split: Op[] = [];
   ops.forEach(op => {
     if (typeof op.insert === 'string') {
-      op.insert.split('\n').forEach((line, index) => {
-        if (index) {
-          split.push({ insert: '\n', attributes: op.attributes });
-        }
-        split.push({ insert: line, attributes: op.attributes });
+      const lines = op.insert.split('\n');
+      lines.forEach((line, index) => {
+        if (index) split.push({ insert: '\n', attributes: op.attributes });
+        if (line) split.push({ insert: line, attributes: op.attributes });
       });
     } else {
       split.push(op);

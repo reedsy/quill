@@ -1,9 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { getSelectionInTextNode, SHORTKEY } from './utils';
-import { CHAPTER, P1, P2 } from './utils/fixtures';
-import QuillPage from './utils/QuillPage';
+import { test, CHAPTER, P1, P2 } from './fixtures';
 
-test('compose an epic', async ({ page }) => {
+test('compose an epic', async ({ page, editorPage }) => {
   const type = page.type.bind(page);
   page.type = async (selector, text, options) => {
     options = {
@@ -13,16 +12,16 @@ test('compose an epic', async ({ page }) => {
     return type(selector, text, options);
   };
 
-  await page.goto('http://localhost:9000/standalone/full');
-  const quillPage = new QuillPage(page);
-  await page.waitForSelector('.ql-editor', { timeout: 10000 });
+  await editorPage.open();
   await expect(page).toHaveTitle('Full Editor - Quill Rich Text Editor');
 
   await page.type('.ql-editor', 'The Whale');
-  expect(await quillPage.editorHTML()).toEqual('<p>The Whale</p>');
+  expect(await editorPage.root.innerHTML()).toEqual('<p>The Whale</p>');
 
   await page.keyboard.press('Enter');
-  expect(await quillPage.editorHTML()).toEqual('<p>The Whale</p><p><br></p>');
+  expect(await editorPage.root.innerHTML()).toEqual(
+    '<p>The Whale</p><p><br></p>',
+  );
 
   await page.keyboard.press('Enter');
   await page.keyboard.press('Tab');
@@ -30,7 +29,7 @@ test('compose an epic', async ({ page }) => {
   await page.keyboard.press('Enter');
   await page.keyboard.press('Enter');
   await page.type('.ql-editor', P2);
-  expect(await quillPage.editorHTML()).toEqual(
+  expect(await editorPage.root.innerHTML()).toEqual(
     [
       '<p>The Whale</p>',
       '<p><br></p>',
@@ -50,7 +49,7 @@ test('compose an epic', async ({ page }) => {
   await page.keyboard.press('Enter');
   await page.type('.ql-editor', CHAPTER);
   await page.keyboard.press('Enter');
-  expect(await quillPage.editorHTML()).toEqual(
+  expect(await editorPage.root.innerHTML()).toEqual(
     [
       '<p>The Whale</p>',
       '<p><br></p>',
@@ -76,7 +75,7 @@ test('compose an epic', async ({ page }) => {
   await page.keyboard.press('Backspace');
   await page.keyboard.press('Backspace');
   await page.keyboard.press('Backspace');
-  expect(await quillPage.editorHTML()).toEqual(
+  expect(await editorPage.root.innerHTML()).toEqual(
     [
       '<p>Whale</p>',
       '<p><br></p>',
@@ -93,7 +92,7 @@ test('compose an epic', async ({ page }) => {
   await page.keyboard.press('Delete');
   await page.keyboard.press('Delete');
   await page.keyboard.press('Delete');
-  expect(await quillPage.editorHTML()).toEqual(
+  expect(await editorPage.root.innerHTML()).toEqual(
     [
       '<p><br></p>',
       '<p><br></p>',
@@ -106,7 +105,7 @@ test('compose an epic', async ({ page }) => {
   );
 
   await page.keyboard.press('Delete');
-  expect(await quillPage.editorHTML()).toEqual(
+  expect(await editorPage.root.innerHTML()).toEqual(
     [
       '<p><br></p>',
       `<p>${CHAPTER}</p>`,
@@ -119,7 +118,7 @@ test('compose an epic', async ({ page }) => {
 
   await page.click('.ql-toolbar .ql-bold');
   await page.click('.ql-toolbar .ql-italic');
-  expect(await quillPage.editorHTML()).toEqual(
+  expect(await editorPage.root.innerHTML()).toEqual(
     [
       '<p><strong><em><span class="ql-cursor">\uFEFF</span></em></strong></p>',
       `<p>${CHAPTER}</p>`,
@@ -135,7 +134,7 @@ test('compose an epic', async ({ page }) => {
   expect(italic).not.toBe(null);
 
   await page.type('.ql-editor', 'Moby Dick');
-  expect(await quillPage.editorHTML()).toEqual(
+  expect(await editorPage.root.innerHTML()).toEqual(
     [
       '<p><strong><em>Moby Dick</em></strong></p>',
       `<p>${CHAPTER}</p>`,
@@ -168,7 +167,7 @@ test('compose an epic', async ({ page }) => {
   await page.keyboard.up(SHORTKEY);
   bold = await page.$('.ql-toolbar .ql-bold.ql-active');
   expect(bold).not.toBe(null);
-  expect(await quillPage.editorHTML()).toEqual(
+  expect(await editorPage.root.innerHTML()).toEqual(
     [
       '<p><strong><em>Moby Dick</em></strong></p>',
       `<p><strong>${CHAPTER}</strong></p>`,
@@ -182,7 +181,7 @@ test('compose an epic', async ({ page }) => {
   await page.keyboard.press('ArrowLeft');
   await page.keyboard.press('ArrowUp');
   await page.click('.ql-toolbar .ql-header[value="1"]');
-  expect(await quillPage.editorHTML()).toEqual(
+  expect(await editorPage.root.innerHTML()).toEqual(
     [
       '<h1><strong><em>Moby Dick</em></strong></h1>',
       `<p><strong>${CHAPTER}</strong></p>`,
@@ -207,7 +206,7 @@ test('compose an epic', async ({ page }) => {
   await page.keyboard.press('b');
   await page.keyboard.up(SHORTKEY);
   await page.type('.ql-editor', 'B');
-  expect(await quillPage.root.locator('p').nth(2).innerHTML()).toBe('ABA');
+  expect(await editorPage.root.locator('p').nth(2).innerHTML()).toBe('ABA');
   await page.keyboard.down(SHORTKEY);
   await page.keyboard.press('b');
   await page.keyboard.up(SHORTKEY);
@@ -216,7 +215,7 @@ test('compose an epic', async ({ page }) => {
   await page.keyboard.press('b');
   await page.keyboard.up(SHORTKEY);
   await page.type('.ql-editor', 'D');
-  expect(await quillPage.root.locator('p').nth(2).innerHTML()).toBe(
+  expect(await editorPage.root.locator('p').nth(2).innerHTML()).toBe(
     'AB<strong>C</strong>DA',
   );
   const selection = await page.evaluate(getSelectionInTextNode);

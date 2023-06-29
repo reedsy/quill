@@ -1,10 +1,6 @@
 import rfdc from 'rfdc';
 import merge from 'lodash.merge';
 import * as Parchment from 'parchment';
-import {
-  Blot,
-  BlotConstructor,
-} from 'parchment/dist/typings/blot/abstract/blot';
 import Delta, { Op } from '@reedsy/quill-delta';
 import Block, { BlockEmbed } from '../blots/block';
 import Scroll, { ScrollConstructor } from '../blots/scroll';
@@ -15,9 +11,10 @@ import Uploader from '../modules/uploader';
 import Editor from './editor';
 import Emitter, { EmitterSource } from './emitter';
 import instances from './instances';
-import logger from './logger';
+import logger, { DebugLevel } from './logger';
 import Module from './module';
 import Selection, { Range } from './selection';
+import Composition from './composition';
 import Theme, { ThemeConstructor } from './theme';
 
 const cloneDeep = rfdc();
@@ -28,7 +25,7 @@ Parchment.ParentBlot.uiClass = 'ql-ui';
 
 interface Options {
   theme?: string;
-  debug?: string | boolean;
+  debug?: DebugLevel | boolean;
   registry?: Parchment.Registry;
   readOnly?: boolean;
   container?: HTMLElement | string;
@@ -70,7 +67,7 @@ class Quill {
     'core/theme': Theme,
   };
 
-  static debug(limit: string | boolean) {
+  static debug(limit: DebugLevel | boolean) {
     if (limit === true) {
       limit = 'log';
     }
@@ -95,10 +92,10 @@ class Quill {
   static register(
     path:
       | string
-      | BlotConstructor
+      | Parchment.BlotConstructor
       | Parchment.Attributor
       | Record<string, unknown>,
-    target?: BlotConstructor | Parchment.Attributor | boolean,
+    target?: Parchment.BlotConstructor | Parchment.Attributor | boolean,
     overwrite = false,
   ) {
     if (typeof path !== 'string') {
@@ -140,6 +137,7 @@ class Quill {
   emitter: Emitter;
   allowReadOnlyEdits: boolean;
   editor: Editor;
+  composition: Composition;
   selection: Selection;
 
   theme: Theme;
@@ -176,12 +174,14 @@ class Quill {
       emitter: this.emitter,
     });
     this.editor = new Editor(this.scroll);
+    this.composition = new Composition(this.scroll, this.emitter);
     this.theme = new this.options.theme(this, this.options); // eslint-disable-line new-cap
     this.selection = this.theme.addModule('selection');
     this.keyboard = this.theme.addModule('keyboard');
     this.clipboard = this.theme.addModule('clipboard');
     this.history = this.theme.addModule('history');
     this.uploader = this.theme.addModule('uploader');
+    this.theme.addModule('input');
     this.theme.init();
     this.emitter.on(Emitter.events.EDITOR_CHANGE, type => {
       if (type === Emitter.events.TEXT_CHANGE) {
@@ -232,11 +232,11 @@ class Quill {
     this.allowReadOnlyEdits = false;
   }
 
-  addContainer(container: string, refNode?: Node): HTMLDivElement;
-  addContainer(container: HTMLElement, refNode?: Node): HTMLElement;
+  addContainer(container: string, refNode?: Node | null): HTMLDivElement;
+  addContainer(container: HTMLElement, refNode?: Node | null): HTMLElement;
   addContainer(
     container: string | HTMLElement,
-    refNode = null,
+    refNode: Node | null = null,
   ): HTMLDivElement | HTMLElement {
     if (typeof container === 'string') {
       const className = container;
@@ -444,7 +444,7 @@ class Quill {
     return this.editor.getFormat(index.index, index.length);
   }
 
-  getIndex(blot: Blot) {
+  getIndex(blot: Parchment.Blot) {
     return blot.offset(this.scroll);
   }
 
@@ -536,6 +536,12 @@ class Quill {
   insertText(
     index: number,
     text: string,
+    formats: Record<string, unknown>,
+    source: EmitterSource,
+  ): Delta;
+  insertText(
+    index: number,
+    text: string,
     name: string,
     value: unknown,
     source: EmitterSource,
@@ -543,12 +549,13 @@ class Quill {
   insertText(
     index: number,
     text: string,
-    name: string | EmitterSource,
+    name: string | Record<string, unknown> | EmitterSource,
     value?: unknown,
     source?: EmitterSource,
   ): Delta {
     let formats;
     // eslint-disable-next-line prefer-const
+    // @ts-expect-error
     [index, , formats, source] = overload(index, 0, name, value, source);
     return modify.call(
       this,
@@ -565,26 +572,31 @@ class Quill {
     return this.scroll.isEnabled();
   }
 
-  off(...args: Parameters<typeof Emitter['prototype']['off']>) {
+  off(...args: Parameters<(typeof Emitter)['prototype']['off']>) {
     return this.emitter.off(...args);
   }
 
   on(
-    event: typeof Emitter['events']['TEXT_CHANGE'],
+    event: (typeof Emitter)['events']['TEXT_CHANGE'],
     handler: (delta: Delta, oldContent: Delta, source: EmitterSource) => void,
   ): Emitter;
   on(
-    event: typeof Emitter['events']['SELECTION_CHANGE'],
+    event: (typeof Emitter)['events']['SELECTION_CHANGE'],
     handler: (range: Range, oldRange: Range, source: EmitterSource) => void,
   ): Emitter;
   // @ts-expect-error
   on(
-    event: typeof Emitter['events']['EDITOR_CHANGE'],
+    event: (typeof Emitter)['events']['EDITOR_CHANGE'],
     handler: (
       ...args:
-        | [typeof Emitter['events']['TEXT_CHANGE'], Delta, Delta, EmitterSource]
         | [
-            typeof Emitter['events']['SELECTION_CHANGE'],
+            (typeof Emitter)['events']['TEXT_CHANGE'],
+            Delta,
+            Delta,
+            EmitterSource,
+          ]
+        | [
+            (typeof Emitter)['events']['SELECTION_CHANGE'],
             Range,
             Range,
             EmitterSource,
@@ -592,11 +604,11 @@ class Quill {
     ) => void,
   ): Emitter;
   on(event: string, ...args: unknown[]): Emitter;
-  on(...args: Parameters<typeof Emitter['prototype']['on']>): Emitter {
+  on(...args: Parameters<(typeof Emitter)['prototype']['on']>): Emitter {
     return this.emitter.on(...args);
   }
 
-  once(...args: Parameters<typeof Emitter['prototype']['once']>) {
+  once(...args: Parameters<(typeof Emitter)['prototype']['once']>) {
     return this.emitter.once(...args);
   }
 
@@ -877,6 +889,7 @@ function overload(
   }
   // Handle format being object, two format name/value strings or excluded
   if (typeof name === 'object') {
+    // @ts-expect-error Fix me later
     formats = name;
     // @ts-expect-error
     source = value;
