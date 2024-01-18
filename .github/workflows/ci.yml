@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  unit:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [
+            mac-chrome-latest,
+            mac-firefox-latest,
+            mac-safari-latest,
+            windows-chrome-latest,
+            windows-firefox-latest,
+            windows-edge-latest,
+            ios-latest,
+            # android-latest,
+          ]
+
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://npm.pkg.github.com'
+
+      - name: Install
+        run: npm install
+        env:
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test ${{ matrix.browser }}
+        run: npm run test:unit:ci
+        env:
+          BROWSER: ${{ matrix.browser }}
+
+      - name: Random test
+        run: npm run test:random
+  e2e:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://npm.pkg.github.com'
+      - name: Install
+        run: npm install
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+      - name: Run Playwright tests
+        run: |
+          npm start &
+          sleep 120
+          npx playwright test
+  release:
+    needs:
+      - unit
+      - e2e
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://npm.pkg.github.com'
+      - name: Install
+        run: npm install
+      - name: Release
+        run: ./release.sh
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
