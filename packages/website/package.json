@@ -1,0 +1,45 @@
+{
+  "name": "website",
+  "version": "2.0.0-rc.0",
+  "description": "Quill official website",
+  "private": true,
+  "homepage": "https://quilljs.com",
+  "keywords": [],
+  "license": "BSD-3-Clause",
+  "scripts": {
+    "dev": "PORT=$npm_package_config_ports_website next dev",
+    "start": "npm run dev",
+    "build": "next build",
+    "lint": "next lint",
+    "serve": "npm run serve"
+  },
+  "dependencies": {
+    "@codesandbox/sandpack-react": "^2.11.3",
+    "@docsearch/react": "^3.5.2",
+    "@mdx-js/loader": "^3.0.0",
+    "@mdx-js/mdx": "^2.1.5",
+    "@mdx-js/react": "^2.3.0",
+    "@next/mdx": "^14.0.4",
+    "@next/third-parties": "^14.1.0",
+    "@svgr/webpack": "^8.1.0",
+    "@types/mdx": "^2.0.10",
+    "classnames": "^2.3.2",
+    "eslint-config-next": "^14.1.0",
+    "lz-string": "^1.5.0",
+    "next": "^14.0.4",
+    "next-mdx-remote": "^4.4.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-helmet": "^6.1.0",
+    "slugify": "^1.6.5"
+  },
+  "prettier": {
+    "singleQuote": true
+  },
+  "devDependencies": {
+    "http-proxy": "^1.18.1",
+    "prism-react-renderer": "^2.3.0",
+    "prismjs": "^1.29.0",
+    "sass": "^1.55.0"
+  }
+}

@@ -1,0 +1,186 @@
+.container {
+  margin: 24px 0 32px;
+  transition: opacity 0.2s;
+}
+
+.bar {
+  display: flex;
+  margin: 0 0 10px;
+
+  .togglePreviewButton {
+    margin-left: auto;
+  }
+}
+
+$borderColor: #dadcdc;
+.wrapper {
+  display: flex;
+  flex-direction: column;
+
+  .editorWrapper {
+    border: 1px solid $borderColor;
+    position: relative;
+    max-height: 480px;
+    display: flex;
+    flex-direction: column;
+
+    .codeArea {
+      display: flex;
+      flex-direction: row;
+      min-height: 0;
+    }
+
+    .fileTree {
+      border-right: 1px solid $borderColor;
+      width: 200px;
+      overflow: auto;
+    }
+
+    .editor {
+      display: flex;
+      flex: 1;
+    }
+  }
+  .preview {
+    border: 1px solid #ccc;
+    border-top: 0;
+    min-height: 283px;
+    display: flex;
+  }
+
+  &.preferPreview {
+    .preview {
+      border: 1px solid #ccc;
+      border-bottom: 0;
+      min-height: 320px;
+    }
+  }
+}
+
+.widget {
+  border: 1px solid #1ea7fd;
+  border-radius: 2px;
+  padding: 2px 4px 2px 12px;
+  margin-left: 6px;
+  position: relative;
+  cursor: pointer;
+}
+
+.widget:before {
+  content: attr(data-id);
+  background: #1ea7fd;
+  border-radius: 100%;
+  position: absolute;
+  width: 16px;
+  display: block;
+  height: 16px;
+  left: -8px;
+  top: 2px;
+  font-size: 11px;
+  text-align: center;
+  color: white;
+  line-height: 17px;
+}
+
+.footer {
+  background: var(--color-bg-inset);
+  padding: 8px 12px;
+  border-top: 1px solid $borderColor;
+}
+
+.button {
+  font-family: 'Sofia Pro', sans-serif;
+  font-weight: bold;
+  border: 0;
+  border-radius: 2px;
+  padding: 8px 12px;
+  transition: all 0.2s;
+  background: var(--color-accent);
+  border: 2px solid transparent;
+
+  &:hover {
+    background: white;
+    border: 2px solid var(--color-accent);
+  }
+
+  &:active {
+    border: 2px solid var(--color-accent-emphasis);
+  }
+}
+
+.standaloneWrapper {
+  display: grid;
+  grid-template-columns: min-content fit-content(400px) 1fr;
+  height: 100vh;
+
+  .standaloneFileTree {
+    border-right: 1px solid #ccc;
+  }
+
+  .standaloneEditor {
+    border-right: 1px solid #ccc;
+    width: 400px;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .standalonePreview {
+    display: flex;
+  }
+
+  @media (max-width: 900px) {
+    display: flex;
+    flex-direction: column-reverse;
+    height: auto;
+
+    .standalonePreview {
+      height: 320px;
+    }
+
+    .standaloneEditor {
+      width: auto;
+      border-top: 1px solid #ccc;
+      border-right: 0;
+    }
+
+    .standaloneFileTree {
+      border-top: 1px solid #ccc;
+      border-right: 0;
+    }
+  }
+}
+
+.copied {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  color: white;
+  display: flex;
+  align-items: center;
+  place-content: center;
+  font-size: 20px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 99999;
+
+  &.active {
+    opacity: 1;
+  }
+
+  &::before {
+    content: 'URL copied to clipboard';
+    background-color: rgba(0, 0, 0, 0.5);
+    width: max-content;
+    padding: 10px 20px;
+    border-radius: 10px;
+    line-height: 20px;
+  }
+}
+
+.shareButton {
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}

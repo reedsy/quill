@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=$(node -p "require('./package.json').version")
+VERSION=$(node -p "require('./packages/quill/package.json').version")
 
 git config --local user.email "github@reedsy.com"
 git config --local user.name "GitHub Action"
@@ -16,13 +16,8 @@ else
   echo "Deploying version $VERSION"
 fi
 
-echo '!/dist' >> .gitignore
-
-git checkout -b release-$VERSION
-git add .gitignore
-git add --all dist/
-git commit --message "Release version $VERSION"
 git tag $VERSION
 git push origin refs/tags/$VERSION
 
-npm publish
+npm run build:quill
+npm publish packages/quill/dist
