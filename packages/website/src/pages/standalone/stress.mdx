@@ -1,0 +1,44 @@
+<title>Stress</title>
+
+import { StandaloneSandpack } from '../../components/Sandpack';
+
+<StandaloneSandpack
+  preferPreview
+  activeFile="index.js"
+  files={{
+    'index.html': `
+<script src="{{site.highlightjs}}/highlight.min.js"></script>
+<link rel="stylesheet" href="{{site.highlightjs}}/styles/atom-one-dark.min.css" />
+<script src="{{site.katex}}/katex.min.js"></script>
+<link rel="stylesheet" href="{{site.katex}}/katex.min.css" />
+<link rel="stylesheet" href="{{site.cdn}}/quill.snow.css" />
+<script src="{{site.cdn}}/quill.js"></script>
+<div id="editor" style="height: 220px">
+</div>
+<script src="/index.js"></script>
+    `,
+    'index.js': `
+
+const editor = document.getElementById('editor');
+
+editor.innerHTML = new Array(200).fill(0).map((_, index) => {
+  return \`
+    <h2>Heading <i>\${index}</i></h2>
+    <p>List items:</p>
+    <ul>
+    \${
+      new Array(20).fill(0).map((_, index) => {
+        return \`<li>List <strong>item</strong> \${index}</li>\`
+      }).join('')
+    }
+    </ul>
+  </>\`
+}).join('')
+
+const quill = new Quill('#editor', {
+ placeholder: 'Compose an epic...',
+ theme: 'snow' 
+});
+    `
+  }}
+/>

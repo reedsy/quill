@@ -5,27 +5,7 @@
 !.gitignore
 !.github
 
-/dist
-/node_modules
-/selenium
-/src
-/vendor
-/.bundle
-*.d.ts
-*.js.map
-*.log
-package-lock.json
+node_modules
 
-blots/*.js
-core/*.js
-formats/*.js
-modules/*.js
-themes/*.js
-ui/*.js
-test/random.js
-
-core.js
-quill.js
-/test-results/
-/playwright-report/
-/playwright/.cache/
+test-results/
+playwright-report/
