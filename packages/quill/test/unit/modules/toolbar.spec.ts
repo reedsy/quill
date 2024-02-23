@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import Quill from '../../../src/core/quill';
-import { addControls } from '../../../src/modules/toolbar';
+import Toolbar, { addControls } from '../../../src/modules/toolbar';
 import { normalizeHTML } from '../__helpers__/utils';
 import SnowTheme from '../../../src/themes/snow';
-import Toolbar from '../../../src/modules/toolbar';
 import Clipboard from '../../../src/modules/clipboard';
 import Keyboard from '../../../src/modules/keyboard';
 import History from '../../../src/modules/history';
@@ -241,7 +240,7 @@ describe('Toolbar', () => {
       expect(leftButton.getAttribute('aria-pressed')).toBe('false');
     });
 
-    test('update on format', function () {
+    test('update on format', () => {
       const { container, quill } = setup();
       const boldButton = container?.parentNode?.querySelector('button.ql-bold');
       quill.setSelection(1, 2);
