@@ -16,9 +16,10 @@ import instances from './instances.js';
 import logger from './logger.js';
 import type { DebugLevel } from './logger.js';
 import Module from './module.js';
-import Selection, { Range } from './selection.js';
+import type Selection from './selection.js';
+import { Range } from './selection.js';
 import type { Bounds } from './selection.js';
-import Composition from './composition.js';
+import type Composition from './composition.js';
 import Theme from './theme.js';
 import type { ThemeConstructor } from './theme.js';
 import scrollRectIntoView from './utils/scrollRectIntoView.js';
@@ -747,6 +748,12 @@ function expandModuleConfig(config: Record<string, unknown> | undefined) {
   );
 }
 
+function omitUndefinedValuesFromOptions(obj: Options) {
+  return Object.fromEntries(
+    Object.entries(obj).filter((entry) => entry[1] !== undefined),
+  );
+}
+
 function expandConfig(
   containerOrSelector: HTMLElement | string,
   options: Options,
@@ -785,7 +792,11 @@ function expandConfig(
     };
   }
 
-  const config = { ...quillDefaults, ...themeDefaults, ...options };
+  const config = {
+    ...quillDefaults,
+    ...omitUndefinedValuesFromOptions(themeDefaults),
+    ...omitUndefinedValuesFromOptions(options),
+  };
 
   let registry = options.registry;
   if (registry) {

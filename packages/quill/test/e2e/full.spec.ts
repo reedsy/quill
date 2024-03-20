@@ -3,15 +3,6 @@ import { getSelectionInTextNode, SHORTKEY } from './utils/index.js';
 import { test, CHAPTER, P1, P2 } from './fixtures/index.js';
 
 test('compose an epic', async ({ page, editorPage }) => {
-  const type = page.type.bind(page);
-  page.type = async (selector, text, options) => {
-    options = {
-      delay: 1,
-      ...options,
-    };
-    return type(selector, text, options);
-  };
-
   await editorPage.open();
   await editorPage.root.pressSequentially('The Whale');
   expect(await editorPage.root.innerHTML()).toEqual('<p>The Whale</p>');
@@ -45,7 +36,7 @@ test('compose an epic', async ({ page, editorPage }) => {
   );
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
-  await page.type('.ql-editor', CHAPTER);
+  await editorPage.root.pressSequentially(CHAPTER, { delay: 1 });
   await page.keyboard.press('Enter');
   expect(await editorPage.root.innerHTML()).toEqual(
     [
