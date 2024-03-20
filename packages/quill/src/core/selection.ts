@@ -1,13 +1,13 @@
 import { LeafBlot, Scope } from 'parchment';
-import isEqual from 'fast-deep-equal';
 import rfdc from 'rfdc';
-import Emitter from './emitter';
-import type { EmitterSource } from './emitter';
-import logger from './logger';
-import type Cursor from '../blots/cursor';
-import type Scroll from '../blots/scroll';
-import Module from './module';
-import type Quill from './quill';
+import isEqual from 'fast-deep-equal';
+import Emitter from './emitter.js';
+import type { EmitterSource } from './emitter.js';
+import logger from './logger.js';
+import type Cursor from '../blots/cursor.js';
+import type Scroll from '../blots/scroll.js';
+import Module from './module.js';
+import type Quill from './quill.js';
 
 const cloneDeep = rfdc();
 const debug = logger('quill:selection');

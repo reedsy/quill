@@ -1,9 +1,9 @@
 import Delta from '@reedsy/quill-delta';
 import { EmbedBlot, Scope } from 'parchment';
-import Quill from '../core/quill';
-import logger from '../core/logger';
-import Module from '../core/module';
-import type { Range } from '../core/selection';
+import Quill from '../core/quill.js';
+import logger from '../core/logger.js';
+import Module from '../core/module.js';
+import type { Range } from '../core/selection.js';
 
 const debug = logger('quill:toolbar');
 
@@ -111,9 +111,7 @@ class Toolbar extends Module<ToolbarProps> {
       }
       this.quill.focus();
       const [range] = this.quill.selection.getRange();
-      // @ts-expect-error Fix me later
       if (this.handlers[format] != null) {
-        // @ts-expect-error Fix me later
         this.handlers[format].call(this, value);
       } else if (
         // @ts-expect-error
@@ -127,12 +125,10 @@ class Toolbar extends Module<ToolbarProps> {
             .retain(range.index)
             // @ts-expect-error Fix me later
             .delete(range.length)
-            // @ts-expect-error Fix me later
             .insert({ [format]: value }),
           Quill.sources.USER,
         );
       } else {
-        // @ts-expect-error Fix me later
         this.quill.format(format, value, Quill.sources.USER);
       }
       this.update(range);

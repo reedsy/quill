@@ -4,12 +4,12 @@ import { merge } from 'lodash-es';
 import { LeafBlot, EmbedBlot, Scope, ParentBlot } from 'parchment';
 import type { Blot } from 'parchment';
 import Delta, { AttributeMap, Op } from '@reedsy/quill-delta';
-import Block, { BlockEmbed, bubbleFormats } from '../blots/block';
-import Break from '../blots/break';
-import CursorBlot from '../blots/cursor';
-import type Scroll from '../blots/scroll';
-import TextBlot, { escapeText } from '../blots/text';
-import { Range } from './selection';
+import Block, { BlockEmbed, bubbleFormats } from '../blots/block.js';
+import Break from '../blots/break.js';
+import CursorBlot from '../blots/cursor.js';
+import type Scroll from '../blots/scroll.js';
+import TextBlot, { escapeText } from '../blots/text.js';
+import { Range } from './selection.js';
 
 const cloneDeep = rfdc();
 const ASCII = /^[ -~]*$/;
@@ -202,9 +202,9 @@ class Editor {
     const [line, lineOffset] = this.scroll.line(index);
     if (line) {
       const lineLength = line.length();
-      if (line.length() >= lineOffset + length) {
-        const excludeOuterTag = !(lineOffset === 0 && length === lineLength);
-        return convertHTML(line, lineOffset, length, excludeOuterTag);
+      const isWithinLine = line.length() >= lineOffset + length;
+      if (isWithinLine && !(lineOffset === 0 && length === lineLength)) {
+        return convertHTML(line, lineOffset, length, true);
       }
       return convertHTML(this.scroll, index, length, true);
     }
@@ -367,7 +367,7 @@ function convertHTML(
   blot: Blot,
   index: number,
   length: number,
-  excludeOuterTag = false,
+  isRoot = false,
 ): string {
   if ('html' in blot && typeof blot.html === 'function') {
     return blot.html(index, length);
@@ -398,7 +398,7 @@ function convertHTML(
     blot.children.forEachAt(index, length, (child, offset, childLength) => {
       parts.push(convertHTML(child, offset, childLength));
     });
-    if (excludeOuterTag || blot.statics.blotName === 'list') {
+    if (isRoot || blot.statics.blotName === 'list') {
       return parts.join('');
     }
     const { outerHTML, innerHTML } = blot.domNode as Element;

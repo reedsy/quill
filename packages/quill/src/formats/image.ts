@@ -1,5 +1,5 @@
 import { EmbedBlot } from 'parchment';
-import { sanitize } from './link';
+import { sanitize } from './link.js';
 
 const ATTRIBUTES = ['alt', 'height', 'width'];
 
@@ -29,16 +29,6 @@ class Image extends EmbedBlot {
 
   static match(url: string) {
     return /\.(jpe?g|gif|png)$/.test(url) || /^data:image\/.+;base64/.test(url);
-  }
-
-  static register() {
-    if (/Firefox/i.test(navigator.userAgent)) {
-      setTimeout(() => {
-        // Disable image resizing in Firefox
-        // @ts-expect-error
-        document.execCommand('enableObjectResizing', false, false);
-      }, 1);
-    }
   }
 
   static sanitize(url: string) {

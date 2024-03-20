@@ -8,21 +8,21 @@ import {
   StyleAttributor,
 } from 'parchment';
 import Delta from '@reedsy/quill-delta';
-import { BlockEmbed } from '../blots/block';
-import type { EmitterSource } from '../core/emitter';
-import logger from '../core/logger';
-import Module from '../core/module';
-import Quill from '../core/quill';
-import type { Range } from '../core/selection';
-import { AlignAttribute, AlignStyle } from '../formats/align';
-import { BackgroundStyle } from '../formats/background';
-import CodeBlock from '../formats/code';
-import { ColorStyle } from '../formats/color';
-import { DirectionAttribute, DirectionStyle } from '../formats/direction';
-import { FontStyle } from '../formats/font';
-import { SizeStyle } from '../formats/size';
-import { deleteRange } from './keyboard';
-import normalizeExternalHTML from './normalizeExternalHTML';
+import { BlockEmbed } from '../blots/block.js';
+import type { EmitterSource } from '../core/emitter.js';
+import logger from '../core/logger.js';
+import Module from '../core/module.js';
+import Quill from '../core/quill.js';
+import type { Range } from '../core/selection.js';
+import { AlignAttribute, AlignStyle } from '../formats/align.js';
+import { BackgroundStyle } from '../formats/background.js';
+import CodeBlock from '../formats/code.js';
+import { ColorStyle } from '../formats/color.js';
+import { DirectionAttribute, DirectionStyle } from '../formats/direction.js';
+import { FontStyle } from '../formats/font.js';
+import { SizeStyle } from '../formats/size.js';
+import { deleteRange } from './keyboard.js';
+import normalizeExternalHTML from './normalizeExternalHTML/index.js';
 
 const debug = logger('quill:clipboard');
 
@@ -72,7 +72,9 @@ interface ClipboardOptions {
 }
 
 class Clipboard extends Module<ClipboardOptions> {
-  static DEFAULTS: ClipboardOptions;
+  static DEFAULTS: ClipboardOptions = {
+    matchers: [],
+  };
 
   matchers: [Selector, Matcher][];
 
@@ -84,8 +86,7 @@ class Clipboard extends Module<ClipboardOptions> {
     this.quill.root.addEventListener('cut', (e) => this.onCaptureCopy(e, true));
     this.quill.root.addEventListener('paste', this.onCapturePaste.bind(this));
     this.matchers = [];
-    // @ts-expect-error Fix me later
-    CLIPBOARD_CONFIG.concat(this.options.matchers).forEach(
+    CLIPBOARD_CONFIG.concat(this.options.matchers ?? []).forEach(
       ([selector, matcher]) => {
         this.addMatcher(selector, matcher);
       },
@@ -180,13 +181,32 @@ class Clipboard extends Module<ClipboardOptions> {
     }
   }
 
+  /*
+   * https://www.iana.org/assignments/media-types/text/uri-list
+   */
+  private normalizeURIList(urlList: string) {
+    return (
+      urlList
+        .split(/\r?\n/)
+        // Ignore all comments
+        .filter((url) => url[0] !== '#')
+        .join('\n')
+    );
+  }
+
   onCapturePaste(e: ClipboardEvent) {
     if (e.defaultPrevented || !this.quill.isEnabled()) return;
     e.preventDefault();
     const range = this.quill.getSelection(true);
     if (range == null) return;
     const html = e.clipboardData?.getData('text/html');
-    const text = e.clipboardData?.getData('text/plain');
+    let text = e.clipboardData?.getData('text/plain');
+    if (!html && !text) {
+      const urlList = e.clipboardData?.getData('text/uri-list');
+      if (urlList) {
+        text = this.normalizeURIList(urlList);
+      }
+    }
     const files = Array.from(e.clipboardData?.files || []);
     if (!html && files.length > 0) {
       this.quill.uploader.upload(range, files);
@@ -256,9 +276,6 @@ class Clipboard extends Module<ClipboardOptions> {
     return [elementMatchers, textMatchers];
   }
 }
-Clipboard.DEFAULTS = {
-  matchers: [],
-};
 
 function applyFormat(
   delta: Delta,
@@ -271,11 +288,11 @@ function applyFormat(
   }
 
   return delta.reduce((newDelta, op) => {
+    if (!op.insert) return newDelta;
     if (op.attributes && op.attributes[format]) {
       return newDelta.push(op);
     }
     const formats = value ? { [format]: value } : {};
-    // @ts-expect-error Fix me later
     return newDelta.insert(op.insert, { ...formats, ...op.attributes });
   }, new Delta());
 }
@@ -513,10 +530,10 @@ function matchIndent(node: Node, delta: Delta, scroll: ScrollBlot) {
   }
   if (indent <= 0) return delta;
   return delta.reduce((composed, op) => {
+    if (!op.insert) return composed;
     if (op.attributes && typeof op.attributes.indent === 'number') {
       return composed.push(op);
     }
-    // @ts-expect-error Fix me later
     return composed.insert(op.insert, { indent, ...(op.attributes || {}) });
   }, new Delta());
 }
@@ -529,7 +546,10 @@ function matchList(node: Node, delta: Delta, scroll: ScrollBlot) {
 
 function matchNewline(node: Node, delta: Delta, scroll: ScrollBlot) {
   if (!deltaEndsWith(delta, '\n')) {
-    if (isLine(node, scroll)) {
+    if (
+      isLine(node, scroll) &&
+      (node.childNodes.length > 0 || node instanceof HTMLParagraphElement)
+    ) {
       return delta.insert('\n');
     }
     if (delta.length() > 0 && node.nextSibling) {

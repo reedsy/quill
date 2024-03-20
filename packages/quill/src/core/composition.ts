@@ -1,8 +1,8 @@
-import Embed from '../blots/embed';
-import type Scroll from '../blots/scroll';
-import Emitter from './emitter';
-import Module from './module';
-import type Quill from './quill';
+import Embed from '../blots/embed.js';
+import type Scroll from '../blots/scroll.js';
+import Emitter from './emitter.js';
+import Module from './module.js';
+import type Quill from './quill.js';
 
 // TODO: [reedsy] align with upstream and remove Module: https://github.com/quilljs/quill/pull/3817#issuecomment-1614706669
 class Composition extends Module {

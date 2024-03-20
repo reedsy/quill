@@ -1,31 +1,30 @@
 import Delta from '@reedsy/quill-delta';
 import { describe, expect, test, vitest } from 'vitest';
-import Quill from '../../../src/core';
-import { Range } from '../../../src/core/selection';
-import Bold from '../../../src/formats/bold';
-import Header from '../../../src/formats/header';
-import Image from '../../../src/formats/image';
-import IndentClass from '../../../src/formats/indent';
-import Italic from '../../../src/formats/italic';
-import Link from '../../../src/formats/link';
-import List, { ListContainer } from '../../../src/formats/list';
+import Quill from '../../../src/core.js';
+import { Range } from '../../../src/core/selection.js';
+import Bold from '../../../src/formats/bold.js';
+import Header from '../../../src/formats/header.js';
+import Image from '../../../src/formats/image.js';
+import IndentClass from '../../../src/formats/indent.js';
+import Italic from '../../../src/formats/italic.js';
+import Link from '../../../src/formats/link.js';
+import List, { ListContainer } from '../../../src/formats/list.js';
 import {
   TableBody,
   TableCell,
   TableContainer,
   TableRow,
-} from '../../../src/formats/table';
-import Video from '../../../src/formats/video';
-import { createRegistry } from '../__helpers__/factory';
-import { sleep } from '../__helpers__/utils';
+} from '../../../src/formats/table.js';
+import Video from '../../../src/formats/video.js';
+import { createRegistry } from '../__helpers__/factory.js';
 import type { RegistryDefinition } from 'parchment';
 import {
   DirectionAttribute,
   DirectionClass,
   DirectionStyle,
-} from '../../../src/formats/direction';
-import CodeBlock from '../../../src/formats/code';
-import { ColorClass, ColorStyle } from '../../../src/formats/color';
+} from '../../../src/formats/direction.js';
+import CodeBlock from '../../../src/formats/code.js';
+import { ColorClass, ColorStyle } from '../../../src/formats/color.js';
 
 describe('Clipboard', () => {
   describe('events', () => {
@@ -52,7 +51,6 @@ describe('Clipboard', () => {
       test('pastes html data', async () => {
         const quill = createQuill();
         quill.clipboard.onCapturePaste(clipboardEvent);
-        await sleep(2);
         expect(quill.root).toEqualHTML(
           '<p>01<strong>|</strong><em>7</em>8</p>',
         );
@@ -73,10 +71,39 @@ describe('Clipboard', () => {
           },
           preventDefault: () => {},
         } as ClipboardEvent);
-        await sleep(2);
         expect(quill.getContents().ops).toEqual([
           { insert: 'abcdef', attributes: { bold: true } },
           { insert: '\n' },
+        ]);
+      });
+
+      test('pastes links from iOS share sheets', async () => {
+        const quill = createQuill();
+        quill.setContents(new Delta().insert('\n'));
+        quill.clipboard.onCapturePaste({
+          clipboardData: {
+            getData: (type: string) =>
+              type === 'text/uri-list' ? 'https://example.com' : undefined,
+          },
+          preventDefault: () => {},
+        } as ClipboardEvent);
+        expect(quill.getContents().ops).toEqual([
+          { insert: 'https://example.com\n' },
+        ]);
+
+        // Ignore comments
+        quill.setContents(new Delta().insert('\n'));
+        quill.clipboard.onCapturePaste({
+          clipboardData: {
+            getData: (type: string) =>
+              type === 'text/uri-list'
+                ? 'https://example.com\r\n# Comment\r\nhttps://example.com/a'
+                : undefined,
+          },
+          preventDefault: () => {},
+        } as ClipboardEvent);
+        expect(quill.getContents().ops).toEqual([
+          { insert: 'https://example.com\nhttps://example.com/a\n' },
         ]);
       });
 
@@ -92,7 +119,6 @@ describe('Clipboard', () => {
             files: ['file'],
           },
         });
-        await sleep(2);
         expect(upload).not.toHaveBeenCalled();
         expect(quill.root).toEqualHTML(
           '<p>01<strong>|</strong><em>7</em>8</p>',
@@ -114,7 +140,6 @@ describe('Clipboard', () => {
             files: ['file'],
           },
         });
-        await sleep(2);
         expect(upload).toHaveBeenCalled();
       });
 
@@ -123,7 +148,6 @@ describe('Clipboard', () => {
         const change = vitest.fn();
         quill.on('selection-change', change);
         quill.clipboard.onCapturePaste(clipboardEvent);
-        await sleep(2);
         expect(change).not.toHaveBeenCalled();
       });
     });
@@ -146,7 +170,6 @@ describe('Clipboard', () => {
         const quill = createQuill();
         const { clipboardData, clipboardEvent } = setup();
         quill.clipboard.onCaptureCopy(clipboardEvent, true);
-        await sleep(2);
         expect(quill.root).toEqualHTML('<h1>01<em>7</em>8</h1>');
         expect(quill.getSelection()).toEqual(new Range(2));
         expect(clipboardData['text/plain']).toEqual('23\n56');
@@ -562,6 +585,12 @@ describe('Clipboard', () => {
           .insert('text', { bold: true })
           .insert('\n'),
       );
+    });
+
+    test('ignore empty elements except paragraphs', () => {
+      const html = '<div>hello<div></div>my<p></p>world</div>';
+      const delta = createClipboard().convert({ html });
+      expect(delta).toEqual(new Delta().insert('hello\nmy\n\nworld'));
     });
   });
 });
