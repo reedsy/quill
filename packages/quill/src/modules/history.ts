@@ -1,9 +1,9 @@
 import { Scope } from 'parchment';
 import type Delta from '@reedsy/quill-delta';
-import Module from '../core/module';
-import Quill from '../core/quill';
-import type Scroll from '../blots/scroll';
-import type { Range } from '../core/selection';
+import Module from '../core/module.js';
+import Quill from '../core/quill.js';
+import type Scroll from '../blots/scroll.js';
+import type { Range } from '../core/selection.js';
 
 export interface HistoryOptions {
   userOnly: boolean;
@@ -22,7 +22,11 @@ interface Stack {
 }
 
 class History extends Module<HistoryOptions> {
-  static DEFAULTS: HistoryOptions;
+  static DEFAULTS: HistoryOptions = {
+    delay: 1000,
+    maxStack: 100,
+    userOnly: false,
+  };
 
   lastRecorded = 0;
   ignoreChange = false;
@@ -153,11 +157,6 @@ class History extends Module<HistoryOptions> {
     }
   }
 }
-History.DEFAULTS = {
-  delay: 1000,
-  maxStack: 100,
-  userOnly: false,
-};
 
 function transformStack(stack: StackItem[], delta: Delta) {
   let remoteDelta = delta;

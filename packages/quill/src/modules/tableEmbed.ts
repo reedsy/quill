@@ -1,6 +1,6 @@
 import Delta, { OpIterator } from '@reedsy/quill-delta';
 import type { Op, AttributeMap } from '@reedsy/quill-delta';
-import Module from '../core/module';
+import Module from '../core/module.js';
 
 export type CellData = {
   content?: Delta['ops'];

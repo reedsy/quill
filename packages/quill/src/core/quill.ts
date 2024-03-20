@@ -1,32 +1,30 @@
-import rfdc from 'rfdc';
 import { merge } from 'lodash-es';
 import * as Parchment from 'parchment';
 import type { Op } from '@reedsy/quill-delta';
 import Delta from '@reedsy/quill-delta';
-import type { BlockEmbed } from '../blots/block';
-import type Block from '../blots/block';
-import type Scroll from '../blots/scroll';
-import type Clipboard from '../modules/clipboard';
-import type History from '../modules/history';
-import type Keyboard from '../modules/keyboard';
-import type Uploader from '../modules/uploader';
-import Editor from './editor';
-import Emitter from './emitter';
-import type { EmitterSource } from './emitter';
-import instances from './instances';
-import logger from './logger';
-import type { DebugLevel } from './logger';
-import Module from './module';
-import type Selection from './selection';
-import { Range } from './selection';
-import type { Bounds } from './selection';
-import type Composition from './composition';
-import Theme from './theme';
-import type { ThemeConstructor } from './theme';
-import scrollRectIntoView from './utils/scrollRectIntoView';
-import type { Rect } from './utils/scrollRectIntoView';
+import type { BlockEmbed } from '../blots/block.js';
+import type Block from '../blots/block.js';
+import type Scroll from '../blots/scroll.js';
+import type Clipboard from '../modules/clipboard.js';
+import type History from '../modules/history.js';
+import type Keyboard from '../modules/keyboard.js';
+import type Uploader from '../modules/uploader.js';
+import Editor from './editor.js';
+import Emitter from './emitter.js';
+import type { EmitterSource } from './emitter.js';
+import instances from './instances.js';
+import logger from './logger.js';
+import type { DebugLevel } from './logger.js';
+import Module from './module.js';
+import Selection, { Range } from './selection.js';
+import type { Bounds } from './selection.js';
+import Composition from './composition.js';
+import Theme from './theme.js';
+import type { ThemeConstructor } from './theme.js';
+import scrollRectIntoView from './utils/scrollRectIntoView.js';
+import type { Rect } from './utils/scrollRectIntoView.js';
+import createRegistryWithFormats from './utils/createRegistryWithFormats.js';
 
-const cloneDeep = rfdc();
 const debug = logger('quill');
 
 const globalRegistry = new Parchment.Registry();
@@ -37,29 +35,35 @@ interface Options {
   debug?: DebugLevel | boolean;
   registry?: Parchment.Registry;
   readOnly?: boolean;
-  container?: HTMLElement | string;
   placeholder?: string;
   bounds?: HTMLElement | string | null;
   modules?: Record<string, unknown>;
+  formats?: string[] | null;
 }
 
-interface ExpandedOptions extends Omit<Options, 'theme'> {
+interface ExpandedOptions extends Omit<Options, 'theme' | 'formats'> {
   theme: ThemeConstructor;
   registry: Parchment.Registry;
   container: HTMLElement;
   modules: Record<string, unknown>;
   bounds?: HTMLElement | null;
+  readOnly: boolean;
 }
 
 class Quill {
-  static DEFAULTS: Partial<Options> = {
+  static DEFAULTS = {
     bounds: null,
-    modules: {},
+    modules: {
+      clipboard: true,
+      keyboard: true,
+      history: true,
+      uploader: true,
+    },
     placeholder: '',
     readOnly: false,
     registry: globalRegistry,
     theme: 'default',
-  };
+  } satisfies Partial<Options>;
   static events = Emitter.events;
   static sources = Emitter.sources;
   static version = typeof QUILL_VERSION === 'undefined' ? 'dev' : QUILL_VERSION;
@@ -272,7 +276,6 @@ class Quill {
     return modify.call(
       this,
       () => {
-        // @ts-expect-error
         return this.editor.deleteText(index, length);
       },
       source,
@@ -408,7 +411,6 @@ class Quill {
     return modify.call(
       this,
       () => {
-        // @ts-expect-error
         return this.editor.formatText(index, length, formats);
       },
       source,
@@ -595,7 +597,6 @@ class Quill {
     event: (typeof Emitter)['events']['SELECTION_CHANGE'],
     handler: (range: Range, oldRange: Range, source: EmitterSource) => void,
   ): Emitter;
-  // @ts-expect-error
   on(
     event: (typeof Emitter)['events']['EDITOR_CHANGE'],
     handler: (
@@ -730,95 +731,99 @@ class Quill {
   }
 }
 
-function expandConfig(
-  container: HTMLElement | string,
-  userConfig: Options,
-): ExpandedOptions {
-  // @ts-expect-error -- TODO fix this later
-  let expandedConfig: ExpandedOptions = merge(
-    {
-      container,
-      modules: {
-        clipboard: true,
-        keyboard: true,
-        history: true,
-        selection: true,
-        uploader: true,
-      },
-    },
-    userConfig,
-  );
+function resolveSelector(selector: string | HTMLElement | null | undefined) {
+  return typeof selector === 'string'
+    ? document.querySelector<HTMLElement>(selector)
+    : selector;
+}
 
-  // @ts-expect-error -- TODO fix this later
-  if (!expandedConfig.theme || expandedConfig.theme === Quill.DEFAULTS.theme) {
-    expandedConfig.theme = Theme;
-  } else {
-    expandedConfig.theme = Quill.import(`themes/${expandedConfig.theme}`);
-    if (expandedConfig.theme == null) {
-      throw new Error(
-        `Invalid theme ${expandedConfig.theme}. Did you register it?`,
-      );
-    }
-  }
-  // @ts-expect-error -- TODO fix this later
-  const themeConfig = cloneDeep(expandedConfig.theme.DEFAULTS);
-  [themeConfig, expandedConfig].forEach((config) => {
-    config.modules = config.modules || {};
-    Object.keys(config.modules).forEach((module) => {
-      if (config.modules[module] === true) {
-        config.modules[module] = {};
-      }
-    });
-  });
-  const moduleNames = Object.keys(themeConfig.modules).concat(
-    Object.keys(expandedConfig.modules),
+function expandModuleConfig(config: Record<string, unknown> | undefined) {
+  return Object.entries(config ?? {}).reduce(
+    (expanded, [key, value]) => ({
+      ...expanded,
+      [key]: value === true ? {} : value,
+    }),
+    {},
   );
-  const moduleConfig = moduleNames.reduce((config, name) => {
-    const moduleClass = Quill.import(`modules/${name}`);
-    if (moduleClass == null) {
-      debug.error(
-        `Cannot load ${name} module. Are you sure you registered it?`,
-      );
-    } else {
-      // @ts-expect-error
-      config[name] = moduleClass.DEFAULTS || {};
-    }
-    return config;
-  }, {});
+}
+
+function expandConfig(
+  containerOrSelector: HTMLElement | string,
+  options: Options,
+): ExpandedOptions {
+  const container = resolveSelector(containerOrSelector);
+  if (!container) {
+    throw new Error('Invalid Quill container');
+  }
+
+  const shouldUseDefaultTheme =
+    !options.theme || options.theme === Quill.DEFAULTS.theme;
+  const theme = shouldUseDefaultTheme
+    ? Theme
+    : Quill.import(`themes/${options.theme}`);
+  if (!theme) {
+    throw new Error(`Invalid theme ${options.theme}. Did you register it?`);
+  }
+
+  const { modules: quillModuleDefaults, ...quillDefaults } = Quill.DEFAULTS;
+  const { modules: themeModuleDefaults, ...themeDefaults } = theme.DEFAULTS;
+
+  const modules: ExpandedOptions['modules'] = merge(
+    {},
+    expandModuleConfig(quillModuleDefaults),
+    expandModuleConfig(themeModuleDefaults),
+    expandModuleConfig(options.modules),
+  );
   // Special case toolbar shorthand
   if (
-    expandedConfig.modules != null &&
-    expandedConfig.modules.toolbar &&
-    expandedConfig.modules.toolbar.constructor !== Object
+    modules != null &&
+    modules.toolbar &&
+    modules.toolbar.constructor !== Object
   ) {
-    expandedConfig.modules.toolbar = {
-      container: expandedConfig.modules.toolbar,
+    modules.toolbar = {
+      container: modules.toolbar,
     };
   }
-  expandedConfig = merge(
-    {},
-    Quill.DEFAULTS,
-    { modules: moduleConfig },
-    themeConfig,
-    expandedConfig,
-  );
-  (['bounds', 'container'] as const).forEach((key) => {
-    const selector = expandedConfig[key];
-    if (typeof selector === 'string') {
-      // @ts-expect-error Handle null case
-      expandedConfig[key] = document.querySelector(selector) as HTMLElement;
+
+  const config = { ...quillDefaults, ...themeDefaults, ...options };
+
+  let registry = options.registry;
+  if (registry) {
+    if (options.formats) {
+      debug.warn('Ignoring "formats" option because "registry" is specified');
     }
-  });
-  expandedConfig.modules = Object.keys(expandedConfig.modules).reduce(
-    (config: Record<string, unknown>, name) => {
-      if (expandedConfig.modules[name]) {
-        config[name] = expandedConfig.modules[name];
-      }
-      return config;
-    },
-    {},
-  );
-  return expandedConfig;
+  } else {
+    registry = options.formats
+      ? createRegistryWithFormats(options.formats, config.registry, debug)
+      : config.registry;
+  }
+
+  return {
+    ...config,
+    registry,
+    container,
+    theme,
+    modules: Object.entries(modules).reduce(
+      (modulesWithDefaults, [name, value]) => {
+        if (!value) return modulesWithDefaults;
+
+        const moduleClass = Quill.import(`modules/${name}`);
+        if (moduleClass == null) {
+          debug.error(
+            `Cannot load ${name} module. Are you sure you registered it?`,
+          );
+          return modulesWithDefaults;
+        }
+        return {
+          ...modulesWithDefaults,
+          // @ts-expect-error
+          [name]: merge({}, moduleClass.DEFAULTS || {}, value),
+        };
+      },
+      {},
+    ),
+    bounds: resolveSelector(config.bounds),
+  };
 }
 
 // Handle selection preservation and TEXT_CHANGE emission

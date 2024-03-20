@@ -1,10 +1,21 @@
 # [Unreleased]
 
+- Include source maps for Parchment
+- **Clipboard** Support pasting links copied from iOS share sheets
+
+# 2.0.0-rc.3
+
+- Fix `Quill#getSemanticHTML()` for list items
+- Remove unnecessary Firefox workaround
+- **Clipboard** Fix redundant newlines when pasting from external sources
+- Add `formats` option for specifying allowed formats
+
 # 2.0.0-rc.2
 
 - Fix toolbar button state not updated in some cases
 - Narrower `BubbleTheme.tooltip` type
-- Fix `Selection.getBounds()` when starting range at end of text node
+- Fix `Selection#getBounds()` when starting range at end of text node
+- Improve compatibility with esbuild
 
 # 2.0.0-rc.1
 
@@ -64,7 +75,7 @@ the most important of which is the improved rendering speed for large content.
 ### All Changes
 
 - Fix UI node interactions with line-level navigation shortcuts [#3898](https://github.com/quilljs/quill/pull/3898)
-- Use `&lt;strike&gt;` instead of `&lt;s&gt;` for Strike format [Commit](https://github.com/quilljs/quill/commit/16427683890374ed5acba96765757c44f5d5f2f5)
+- Use `<strike>` instead of `<s>` for Strike format [Commit](https://github.com/quilljs/quill/commit/16427683890374ed5acba96765757c44f5d5f2f5)
 - **Keyboard**: Backspace will keep the format when previous line is empty [#3013](https://github.com/quilljs/quill/pull/3013)
 - **Keyboard**: Discontinue inline formats on enter [#3428](https://github.com/quilljs/quill/pull/3428)
 - Fix length mismatch when copying code [#3028](https://github.com/quilljs/quill/pull/3028)

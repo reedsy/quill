@@ -1,11 +1,11 @@
-import type Quill from '../core';
-import type Clipboard from '../modules/clipboard';
-import type History from '../modules/history';
-import type Keyboard from '../modules/keyboard';
-import type { ToolbarProps } from '../modules/toolbar';
-import type Uploader from '../modules/uploader';
-import type Selection from './selection';
-import type Composition from './composition';
+import type Quill from '../core.js';
+import type Clipboard from '../modules/clipboard.js';
+import type History from '../modules/history.js';
+import type Keyboard from '../modules/keyboard.js';
+import type { ToolbarProps } from '../modules/toolbar.js';
+import type Uploader from '../modules/uploader.js';
+import type Composition from './composition.js';
+import type Selection from './selection.js';
 
 export interface ThemeOptions {
   modules: Record<string, unknown> & {
@@ -57,6 +57,7 @@ class Theme {
 
 export interface ThemeConstructor {
   new (quill: Quill, options: unknown): Theme;
+  DEFAULTS: ThemeOptions;
 }
 
 export default Theme;
