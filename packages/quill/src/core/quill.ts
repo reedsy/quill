@@ -31,18 +31,41 @@ const debug = logger('quill');
 const globalRegistry = new Parchment.Registry();
 Parchment.ParentBlot.uiClass = 'ql-ui';
 
-interface Options {
+/**
+ * Options for initializing a Quill instance
+ */
+export interface QuillOptions {
   theme?: string;
   debug?: DebugLevel | boolean;
   registry?: Parchment.Registry;
+  /**
+   * Whether to disable the editing
+   * @default false
+   */
   readOnly?: boolean;
+
+  /**
+   * Placeholder text to display when the editor is empty
+   * @default ""
+   */
   placeholder?: string;
   bounds?: HTMLElement | string | null;
   modules?: Record<string, unknown>;
+
+  /**
+   * A list of formats that are recognized and can exist within the editor contents.
+   * `null` means all formats are allowed.
+   * @default null
+   */
   formats?: string[] | null;
 }
 
-interface ExpandedOptions extends Omit<Options, 'theme' | 'formats'> {
+/**
+ * Similar to QuillOptions, but with all properties expanded to their default values,
+ * and all selectors resolved to HTMLElements.
+ */
+export interface ExpandedQuillOptions
+  extends Omit<QuillOptions, 'theme' | 'formats'> {
   theme: ThemeConstructor;
   registry: Parchment.Registry;
   container: HTMLElement;
@@ -64,7 +87,7 @@ class Quill {
     readOnly: false,
     registry: globalRegistry,
     theme: 'default',
-  } satisfies Partial<Options>;
+  } satisfies Partial<QuillOptions>;
   static events = Emitter.events;
   static sources = Emitter.sources;
   static version = typeof QUILL_VERSION === 'undefined' ? 'dev' : QUILL_VERSION;
@@ -146,7 +169,7 @@ class Quill {
   root: HTMLDivElement;
   scroll: Scroll;
   emitter: Emitter;
-  allowReadOnlyEdits: boolean;
+  protected allowReadOnlyEdits: boolean;
   editor: Editor;
   composition: Composition;
   selection: Selection;
@@ -157,9 +180,9 @@ class Quill {
   history: History;
   uploader: Uploader;
 
-  options: ExpandedOptions;
+  options: ExpandedQuillOptions;
 
-  constructor(container: HTMLElement | string, options: Options = {}) {
+  constructor(container: HTMLElement | string, options: QuillOptions = {}) {
     this.options = expandConfig(container, options);
     this.container = this.options.container;
     if (this.container == null) {
@@ -390,7 +413,13 @@ class Quill {
     length: number,
     name: string,
     value: unknown,
-    source: EmitterSource,
+    source?: EmitterSource,
+  ): Delta;
+  formatText(
+    index: number,
+    length: number,
+    formats: Record<string, unknown>,
+    source?: EmitterSource,
   ): Delta;
   formatText(
     index: number | { index: number; length: number },
@@ -546,24 +575,24 @@ class Quill {
     );
   }
 
-  insertText(index: number, text: string, source: EmitterSource): Delta;
+  insertText(index: number, text: string, source?: EmitterSource): Delta;
   insertText(
     index: number,
     text: string,
     formats: Record<string, unknown>,
-    source: EmitterSource,
+    source?: EmitterSource,
   ): Delta;
   insertText(
     index: number,
     text: string,
     name: string,
     value: unknown,
-    source: EmitterSource,
+    source?: EmitterSource,
   ): Delta;
   insertText(
     index: number,
     text: string,
-    name: string | Record<string, unknown> | EmitterSource,
+    name?: string | Record<string, unknown> | EmitterSource,
     value?: unknown,
     source?: EmitterSource,
   ): Delta {
@@ -625,8 +654,8 @@ class Quill {
     return this.emitter.once(...args);
   }
 
-  removeFormat(...args: Parameters<typeof overload>) {
-    const [index, length, , source] = overload(...args);
+  removeFormat(index: number, length: number, source?: EmitterSource) {
+    [index, length, , source] = overload(index, length, source);
     return modify.call(
       this,
       () => {
@@ -748,7 +777,7 @@ function expandModuleConfig(config: Record<string, unknown> | undefined) {
   );
 }
 
-function omitUndefinedValuesFromOptions(obj: Options) {
+function omitUndefinedValuesFromOptions(obj: QuillOptions) {
   return Object.fromEntries(
     Object.entries(obj).filter((entry) => entry[1] !== undefined),
   );
@@ -756,8 +785,8 @@ function omitUndefinedValuesFromOptions(obj: Options) {
 
 function expandConfig(
   containerOrSelector: HTMLElement | string,
-  options: Options,
-): ExpandedOptions {
+  options: QuillOptions,
+): ExpandedQuillOptions {
   const container = resolveSelector(containerOrSelector);
   if (!container) {
     throw new Error('Invalid Quill container');
@@ -775,7 +804,7 @@ function expandConfig(
   const { modules: quillModuleDefaults, ...quillDefaults } = Quill.DEFAULTS;
   const { modules: themeModuleDefaults, ...themeDefaults } = theme.DEFAULTS;
 
-  const modules: ExpandedOptions['modules'] = merge(
+  const modules: ExpandedQuillOptions['modules'] = merge(
     {},
     expandModuleConfig(quillModuleDefaults),
     expandModuleConfig(themeModuleDefaults),
@@ -1004,5 +1033,8 @@ function shiftRange(
   }
   return new Range(start, end - start);
 }
+
+export type { DebugLevel, EmitterSource };
+export { Parchment, Range };
 
 export { globalRegistry, expandConfig, overload, Quill as default };
