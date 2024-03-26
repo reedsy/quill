@@ -1,4 +1,10 @@
-import Quill from './core/quill.js';
+import Quill, { Parchment, Range } from './core/quill.js';
+import type {
+  DebugLevel,
+  EmitterSource,
+  ExpandedQuillOptions,
+  QuillOptions,
+} from './core/quill.js';
 
 import Block, { BlockEmbed } from './blots/block.js';
 import Break from './blots/break.js';
@@ -19,7 +25,8 @@ import Composition from './core/composition.js';
 import Selection from './core/selection.js';
 import UINode from './modules/uiNode.js';
 
-export { Delta, Op, OpIterator, AttributeMap };
+export { Delta, Op, OpIterator, AttributeMap, Parchment, Range };
+export type { DebugLevel, EmitterSource, ExpandedQuillOptions, QuillOptions };
 
 Quill.register({
   'blots/block': Block,
