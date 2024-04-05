@@ -32,7 +32,7 @@ export interface Bounds {
   width: number;
 }
 
-class Range {
+export class Range {
   constructor(
     public index: number,
     public length = 0,
@@ -172,7 +172,6 @@ class Selection extends Module {
       // TODO Give blot ability to not split
       if (blot instanceof LeafBlot) {
         const after = blot.split(nativeRange.start.offset);
-        // @ts-expect-error Fix me later
         blot.parent.insertBefore(this.cursor, after);
       } else {
         // @ts-expect-error TODO: nativeRange.start.node doesn't seem to match function signature
@@ -494,4 +493,4 @@ function contains(parent: Node, descendant: Node) {
   return parent.contains(descendant);
 }
 
-export { Range, Selection as default };
+export default Selection;
