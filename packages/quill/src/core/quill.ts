@@ -403,7 +403,7 @@ class Quill {
   }
 
   formatText(
-    range: { index: number; length: number },
+    range: Range,
     name: string,
     value: unknown,
     source?: EmitterSource,
@@ -422,7 +422,7 @@ class Quill {
     source?: EmitterSource,
   ): Delta;
   formatText(
-    index: number | { index: number; length: number },
+    index: number | Range,
     length: number | string,
     name: string | unknown,
     value?: unknown | EmitterSource,
@@ -474,11 +474,11 @@ class Quill {
   }
 
   getFormat(index?: number, length?: number): { [format: string]: unknown };
-  getFormat(range?: { index: number; length: number }): {
+  getFormat(range?: Range): {
     [format: string]: unknown;
   };
   getFormat(
-    index: { index: number; length: number } | number = this.getSelection(true),
+    index: Range | number = this.getSelection(true),
     length = 0,
   ): { [format: string]: unknown } {
     if (typeof index === 'number') {
@@ -503,10 +503,10 @@ class Quill {
     return this.scroll.line(index);
   }
 
-  getLines(range: { index: number; length: number }): (Block | BlockEmbed)[];
+  getLines(range: Range): (Block | BlockEmbed)[];
   getLines(index?: number, length?: number): (Block | BlockEmbed)[];
   getLines(
-    index: { index: number; length: number } | number = 0,
+    index: Range | number = 0,
     length = Number.MAX_VALUE,
   ): (Block | BlockEmbed)[] {
     if (typeof index !== 'number') {
@@ -527,12 +527,9 @@ class Quill {
     return this.selection.getRange()[0];
   }
 
-  getSemanticHTML(range: { index: number; length: number }): string;
+  getSemanticHTML(range: Range): string;
   getSemanticHTML(index?: number, length?: number): string;
-  getSemanticHTML(
-    index: { index: number; length: number } | number = 0,
-    length?: number,
-  ) {
+  getSemanticHTML(index: Range | number = 0, length?: number) {
     if (typeof index === 'number') {
       length = length ?? this.getLength() - index;
     }
@@ -541,12 +538,9 @@ class Quill {
     return this.editor.getHTML(index, length);
   }
 
-  getText(range?: { index: number; length: number }): string;
+  getText(range?: Range): string;
   getText(index?: number, length?: number): string;
-  getText(
-    index: { index: number; length: number } | number = 0,
-    length?: number,
-  ): string {
+  getText(index: Range | number = 0, length?: number): string {
     if (typeof index === 'number') {
       length = length ?? this.getLength() - index;
     }
@@ -1034,7 +1028,7 @@ function shiftRange(
   return new Range(start, end - start);
 }
 
-export type { DebugLevel, EmitterSource };
+export type { Bounds, DebugLevel, EmitterSource };
 export { Parchment, Range };
 
 export { globalRegistry, expandConfig, overload, Quill as default };
