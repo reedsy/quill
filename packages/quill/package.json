@@ -1,6 +1,6 @@
 {
   "name": "@reedsy/quill",
-  "version": "2.0.0-reedsy-5.0.5",
+  "version": "2.0.0-reedsy-5.0.6",
   "description": "Your powerful, rich text editor",
   "author": "Jason Chen <jhchen7@gmail.com>",
   "homepage": "https://quilljs.com",
@@ -10,7 +10,7 @@
     "@reedsy/quill-delta": "^5.1.0-reedsy.3.0.0",
     "eventemitter3": "^5.0.1",
     "lodash-es": "^4.17.21",
-    "parchment": "3.0.0-rc.1",
+    "parchment": "^3.0.0",
     "quill-delta": "^5.1.0"
   },
   "devDependencies": {
