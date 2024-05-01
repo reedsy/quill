@@ -1,5 +1,11 @@
 # [Unreleased]
 
+# 2.0.1
+
+- Prevent overriding of theme's default toolbar settings mistakenly [#4120](https://github.com/quilljs/quill/pull/4120)
+- Improve typings for methods that return a Delta [#4136](https://github.com/quilljs/quill/pull/4136)
+- Fix toolbar icons for h3-h6 [#4131](https://github.com/quilljs/quill/pull/4131)
+
 # 2.0.0
 
 We are thrilled to announce the release of Quill 2.0! Please check out the [announcement post](https://slab.com/blog/announcing-quill-2-0/).

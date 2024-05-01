@@ -335,7 +335,7 @@ class Quill {
     name: string,
     value: unknown,
     source: EmitterSource = Emitter.sources.API,
-  ) {
+  ): Delta {
     return modify.call(
       this,
       () => {
@@ -558,7 +558,7 @@ class Quill {
     embed: string,
     value: unknown,
     source: EmitterSource = Quill.sources.API,
-  ) {
+  ): Delta {
     return modify.call(
       this,
       () => {
@@ -648,7 +648,7 @@ class Quill {
     return this.emitter.once(...args);
   }
 
-  removeFormat(index: number, length: number, source?: EmitterSource) {
+  removeFormat(index: number, length: number, source?: EmitterSource): Delta {
     [index, length, , source] = overload(index, length, source);
     return modify.call(
       this,
@@ -689,7 +689,7 @@ class Quill {
   setContents(
     delta: Delta | Op[],
     source: EmitterSource = Emitter.sources.API,
-  ) {
+  ): Delta {
     return modify.call(
       this,
       () => {
@@ -742,7 +742,7 @@ class Quill {
   updateContents(
     delta: Delta | Op[],
     source: EmitterSource = Emitter.sources.API,
-  ) {
+  ): Delta {
     return modify.call(
       this,
       () => {
@@ -767,7 +767,7 @@ function expandModuleConfig(config: Record<string, unknown> | undefined) {
       ...expanded,
       [key]: value === true ? {} : value,
     }),
-    {},
+    {} as Record<string, unknown>,
   );
 }
 
@@ -798,22 +798,25 @@ function expandConfig(
   const { modules: quillModuleDefaults, ...quillDefaults } = Quill.DEFAULTS;
   const { modules: themeModuleDefaults, ...themeDefaults } = theme.DEFAULTS;
 
+  let userModuleOptions = expandModuleConfig(options.modules);
+  // Special case toolbar shorthand
+  if (
+    userModuleOptions != null &&
+    userModuleOptions.toolbar &&
+    userModuleOptions.toolbar.constructor !== Object
+  ) {
+    userModuleOptions = {
+      ...userModuleOptions,
+      toolbar: { container: userModuleOptions.toolbar },
+    };
+  }
+
   const modules: ExpandedQuillOptions['modules'] = merge(
     {},
     expandModuleConfig(quillModuleDefaults),
     expandModuleConfig(themeModuleDefaults),
-    expandModuleConfig(options.modules),
+    userModuleOptions,
   );
-  // Special case toolbar shorthand
-  if (
-    modules != null &&
-    modules.toolbar &&
-    modules.toolbar.constructor !== Object
-  ) {
-    modules.toolbar = {
-      container: modules.toolbar,
-    };
-  }
 
   const config = {
     ...quillDefaults,
