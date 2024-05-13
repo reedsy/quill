@@ -26,6 +26,7 @@ import Composition from './core/composition.js';
 import Selection from './core/selection.js';
 import UINode from './modules/uiNode.js';
 
+export { default as Module } from './core/module.js';
 export { Delta, Op, OpIterator, AttributeMap, Parchment, Range };
 export type {
   Bounds,

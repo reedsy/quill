@@ -348,7 +348,14 @@ class Keyboard extends Module<KeyboardOptions> {
   }
 
   protected shouldHandleKeydown(event: KeyboardEvent): boolean {
-    return !event.defaultPrevented && !event.isComposing;
+    const isComposing =
+      event.isComposing ||
+      // evt.isComposing is false when pressing Enter/Backspace when composing in Safari
+      // https://bugs.webkit.org/show_bug.cgi?id=165004
+      (event.keyCode === 229 &&
+        (event.key === 'Enter' || event.key === 'Backspace'));
+
+    return !event.defaultPrevented && !isComposing;
   }
 }
 
