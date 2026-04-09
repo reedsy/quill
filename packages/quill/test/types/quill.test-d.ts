@@ -1,7 +1,6 @@
 import { assertType, expectTypeOf } from 'vitest';
-import Quill from '../../src/quill.js';
+import Quill, { Delta } from '../../src/quill.js';
 import type { EmitterSource, Parchment, Range } from '../../src/quill.js';
-import Delta from 'quill-delta';
 import type { default as Block, BlockEmbed } from '../../src/blots/block.js';
 import SnowTheme from '../../src/themes/snow.js';
 import { LeafBlot } from 'parchment';
@@ -197,6 +196,7 @@ const quill = new Quill('#editor');
 
 {
   quill.scrollSelectionIntoView();
+  quill.scrollSelectionIntoView({ smooth: true });
 }
 
 {
@@ -220,6 +220,10 @@ const quill = new Quill('#editor');
   quill.scrollRectIntoView({ left: 0, right: 0, top: 0, bottom: 0 });
   quill.scrollRectIntoView(
     document.createElement('div').getBoundingClientRect(),
+  );
+  quill.scrollRectIntoView(
+    document.createElement('div').getBoundingClientRect(),
+    { smooth: true },
   );
 }
 

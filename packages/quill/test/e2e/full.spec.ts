@@ -36,7 +36,7 @@ test('compose an epic', async ({ page, editorPage }) => {
   );
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
-  await editorPage.root.pressSequentially(CHAPTER, { delay: 1 });
+  await editorPage.root.pressSequentially(CHAPTER);
   await page.keyboard.press('Enter');
   expect(await editorPage.root.innerHTML()).toEqual(
     [
@@ -150,6 +150,9 @@ test('compose an epic', async ({ page, editorPage }) => {
   italic = await page.$('.ql-toolbar .ql-italic.ql-active');
   expect(bold).toBe(null);
   expect(italic).toBe(null);
+  expect(await page.evaluate(getSelectionInTextNode)).toBe(
+    '["Chapter 1. Loomings.",0,"Chapter 1. Loomings.",20]',
+  );
 
   await page.keyboard.down(SHORTKEY);
   await page.keyboard.press('b');

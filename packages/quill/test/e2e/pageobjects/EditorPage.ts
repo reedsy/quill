@@ -58,7 +58,20 @@ export default class EditorPage {
   constructor(protected readonly page: Page) {}
 
   get root() {
-    return this.page.locator('.ql-editor');
+    return new Proxy(this.page.locator('.ql-editor'), {
+      get(target, key) {
+        if (key !== 'pressSequentially')
+          return target[key as keyof typeof target];
+        // Iterate over keys with a setTimeout() between presses to emulate more realistic
+        // user input. Without this, we run into test flakiness caused by https://github.com/reedsy/quill/pull/39
+        return async (text: string, options: any) => {
+          for (const char of text) {
+            await target.pressSequentially(char, options);
+            await new Promise((resolve) => setTimeout(resolve, 10));
+          }
+        };
+      },
+    });
   }
 
   async open() {
