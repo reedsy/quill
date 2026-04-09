@@ -1,4 +1,4 @@
-import Delta from '@reedsy/quill-delta';
+import { Delta } from '@reedsy/quill-delta';
 import Quill from '../core/quill.js';
 import Module from '../core/module.js';
 import {

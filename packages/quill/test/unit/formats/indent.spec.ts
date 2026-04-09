@@ -1,4 +1,4 @@
-import Delta from '@reedsy/quill-delta';
+import { Delta } from '@reedsy/quill-delta';
 import {
   createScroll as baseCreateScroll,
   createRegistry,

@@ -1,4 +1,4 @@
-import Delta from '@reedsy/quill-delta';
+import { Delta } from '@reedsy/quill-delta';
 import { EmbedBlot, Scope } from 'parchment';
 import Quill from '../core/quill.js';
 import logger from '../core/logger.js';

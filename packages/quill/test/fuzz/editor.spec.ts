@@ -1,5 +1,5 @@
 import type { Op } from '@reedsy/quill-delta';
-import Delta, { AttributeMap } from '@reedsy/quill-delta';
+import { Delta, AttributeMap } from '@reedsy/quill-delta';
 import { choose, randomInt, runFuzz } from './__helpers__/utils.js';
 import { AlignClass } from '../../src/formats/align.js';
 import { FontClass } from '../../src/formats/font.js';

@@ -1,5 +1,5 @@
-import Delta, { OpIterator } from '@reedsy/quill-delta';
-import type { Op, AttributeMap } from '@reedsy/quill-delta';
+import { Delta, AttributeMap, OpIterator } from '@reedsy/quill-delta';
+import type { Op } from '@reedsy/quill-delta';
 import Module from '../core/module.js';
 
 export type CellData = {
@@ -136,7 +136,7 @@ export const tableHandler = {
         new Delta(bCell.content || []),
       );
 
-      const attributes = Delta.AttributeMap.compose(
+      const attributes = AttributeMap.compose(
         aCell.attributes,
         bCell.attributes,
         keepNull,
@@ -190,7 +190,7 @@ export const tableHandler = {
             priority,
           );
 
-          const attributes = Delta.AttributeMap.transform(
+          const attributes = AttributeMap.transform(
             aCell.attributes,
             bCell.attributes,
             priority,
@@ -225,7 +225,7 @@ export const tableHandler = {
       const content = new Delta(changeCell.content || []).invert(
         new Delta(baseCell.content || []),
       );
-      const attributes = Delta.AttributeMap.invert(
+      const attributes = AttributeMap.invert(
         changeCell.attributes,
         baseCell.attributes,
       );

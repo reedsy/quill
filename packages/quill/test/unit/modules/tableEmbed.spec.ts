@@ -1,4 +1,4 @@
-import Delta from '@reedsy/quill-delta';
+import { Delta } from '@reedsy/quill-delta';
 import { tableHandler } from '../../../src/modules/tableEmbed.js';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
