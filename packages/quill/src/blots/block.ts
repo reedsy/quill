@@ -6,7 +6,7 @@ import {
   Scope,
 } from 'parchment';
 import type { Blot, Parent } from 'parchment';
-import Delta from '@reedsy/quill-delta';
+import { Delta } from '@reedsy/quill-delta';
 import Break from './break.js';
 import Inline from './inline.js';
 import TextBlot from './text.js';

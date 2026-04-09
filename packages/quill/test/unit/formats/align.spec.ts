@@ -1,4 +1,4 @@
-import Delta from '@reedsy/quill-delta';
+import { Delta } from '@reedsy/quill-delta';
 import Editor from '../../../src/core/editor.js';
 import { describe, test, expect } from 'vitest';
 import {

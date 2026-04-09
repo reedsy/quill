@@ -1,5 +1,5 @@
 import type { AttributeMap } from '@reedsy/quill-delta';
-import Delta from '@reedsy/quill-delta';
+import { Delta } from '@reedsy/quill-delta';
 import TableEmbed from '../../src/modules/tableEmbed.js';
 import type {
   CellData,
