@@ -1,7 +1,7 @@
 import Selection, { Range } from '../../../src/core/selection.js';
 import Cursor from '../../../src/blots/cursor.js';
 import Emitter from '../../../src/core/emitter.js';
-import { expect, describe, test } from 'vitest';
+import { expect, describe, test, vi } from 'vitest';
 import { createRegistry, createScroll } from '../__helpers__/factory.js';
 import Bold from '../../../src/formats/bold.js';
 import Underline from '../../../src/formats/underline.js';
@@ -12,7 +12,14 @@ import Strike from '../../../src/formats/strike.js';
 import { ColorStyle } from '../../../src/formats/color.js';
 import { BackgroundStyle } from '../../../src/formats/background.js';
 import { SizeClass } from '../../../src/formats/size.js';
+import Embed from '../../../src/blots/embed.js';
 import type Quill from '../../../src/core.js';
+
+class GuardedEmbed extends Embed {
+  static blotName = 'guarded-embed';
+  static tagName = 'SPAN';
+  static className = 'ql-guarded-embed';
+}
 
 const createSelection = (html: string, container = document.body) => {
   const scroll = createScroll(
@@ -23,6 +30,7 @@ const createSelection = (html: string, container = document.body) => {
       Italic,
       Strike,
       Image,
+      GuardedEmbed,
       Link,
       ColorStyle,
       BackgroundStyle,
@@ -431,6 +439,66 @@ describe('Selection', () => {
       selection.setNativeRange(selection.cursor.textNode, 2);
       selection.scroll.update();
       expect(selection.root).toEqualHTML('<p>01<em>|</em>23</p>');
+    });
+
+    test('text change cleanup restores the selection', () => {
+      vi.useFakeTimers();
+      const selection = createSelection(`<p>0123</p>`);
+      selection.setRange(new Range(2));
+      selection.format('italic', true);
+      selection.cursor.textNode.data = `${Cursor.CONTENTS}|`;
+      selection.setNativeRange(selection.cursor.textNode, 2);
+      selection.scroll.update();
+      selection.setNativeRange(selection.root.firstChild as Node, 0);
+
+      vi.runAllTimers();
+      expect(selection.getRange()[0]?.index).toEqual(3);
+      vi.useRealTimers();
+    });
+
+    test('text change cleanup after the text has changed again', () => {
+      vi.useFakeTimers();
+      const selection = createSelection(`<p>0123</p>`);
+      selection.setRange(new Range(2));
+      selection.format('italic', true);
+      selection.cursor.textNode.data = `${Cursor.CONTENTS}|`;
+      selection.setNativeRange(selection.cursor.textNode, 2);
+      selection.scroll.update();
+
+      const textNode = selection.root.querySelector('em')?.firstChild as Text;
+      textNode.data = '';
+      expect(() => vi.runAllTimers()).not.toThrow();
+      vi.useRealTimers();
+    });
+
+    test('text change cleanup with a negative cursor offset', () => {
+      vi.useFakeTimers();
+      const selection = createSelection(`<p><br></p>`);
+      selection.setRange(new Range(0));
+      selection.format('italic', true);
+      selection.cursor.textNode.data = `|${Cursor.CONTENTS}`;
+      selection.setNativeRange(selection.cursor.textNode, 0);
+      selection.scroll.update();
+
+      expect(() => vi.runAllTimers()).not.toThrow();
+      vi.useRealTimers();
+    });
+
+    test('embed guard cleanup restores the selection', () => {
+      vi.useFakeTimers();
+      const selection = createSelection(
+        `<p>01<span class="ql-guarded-embed"></span></p>`,
+      );
+      const embed = selection.root.querySelector('.ql-guarded-embed')!;
+      const rightGuard = embed.lastChild as Text;
+      rightGuard.data = `${rightGuard.data}|`;
+      selection.setNativeRange(rightGuard, 2);
+      selection.scroll.update();
+      selection.setNativeRange(selection.root.firstChild as Node, 0);
+
+      vi.runAllTimers();
+      expect(selection.getRange()[0]?.index).toEqual(4);
+      vi.useRealTimers();
     });
 
     test('no cleanup', () => {
