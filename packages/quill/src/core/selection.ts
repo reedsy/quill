@@ -112,8 +112,19 @@ class Selection extends Module {
       // side-effect of waiting until after the SCROLL_UPDATE listener above,
       // which tries to reset the user selection to what it was before the update.
       setTimeout(() => {
-        const { startNode, startOffset, endNode, endOffset } = context.range;
-        this.setNativeRange(startNode, startOffset, endNode, endOffset);
+        const {
+          startNode,
+          startOffset,
+          endNode = startNode,
+          endOffset = startOffset,
+        } = context.range;
+        // The DOM may have changed again while we waited, leaving the range stale
+        if (
+          isValidBoundary(this.root, startNode, startOffset) &&
+          isValidBoundary(this.root, endNode, endOffset)
+        ) {
+          this.setNativeRange(startNode, startOffset, endNode, endOffset);
+        }
         this.update(Emitter.sources.SILENT);
       });
     });
@@ -491,6 +502,13 @@ function contains(parent: Node, descendant: Node) {
     return false;
   }
   return parent.contains(descendant);
+}
+
+function isValidBoundary(root: Node, node: Node, offset: number) {
+  if (!contains(root, node)) return false;
+  const length =
+    node instanceof CharacterData ? node.length : node.childNodes.length;
+  return offset >= 0 && offset <= length;
 }
 
 export default Selection;
